@@ -1,0 +1,7 @@
+[package]
+name = "cargo-clone"
+version = "0.1.0"
+authors = ["Jan Likar <likar.jan@gmail.com>"]
+
+[dependencies]
+cargo = "0.7.0"
