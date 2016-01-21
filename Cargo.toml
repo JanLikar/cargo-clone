@@ -5,3 +5,5 @@ authors = ["Jan Likar <likar.jan@gmail.com>"]
 
 [dependencies]
 cargo = "0.7.0"
+docopt = "0.6"
+rustc-serialize = "0.3"
