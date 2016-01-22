@@ -1,4 +1,5 @@
 extern crate cargo;
+extern crate walkdir;
 
 macro_rules! bail {
     ($($fmt:tt)*) => (

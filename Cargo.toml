@@ -7,3 +7,4 @@ authors = ["Jan Likar <likar.jan@gmail.com>"]
 cargo = "0.7.0"
 docopt = "0.6"
 rustc-serialize = "0.3"
+walkdir = "0.1.5"
