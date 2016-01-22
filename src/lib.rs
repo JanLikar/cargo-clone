@@ -2,38 +2,53 @@ extern crate cargo;
 
 macro_rules! bail {
     ($($fmt:tt)*) => (
-        return Err(util::human(&format_args!($($fmt)*)))
+        return Err(human(&format_args!($($fmt)*)))
     )
 }
 
 pub mod ops {
-    use std::path::Path;
+    use std::path::{Path, PathBuf};
 
-    use cargo::util::{self, CargoResult, Config};
+    use cargo::util::{CargoResult, Config, human};
     use cargo::core::package_id::PackageId;
     use cargo::core::source::{Source, SourceId};
     use cargo::core::registry::Registry;
     use cargo::core::dependency::Dependency;
     use cargo::sources::RegistrySource;
 
-    pub fn clone(krate: String, source_id: &SourceId, version: Option<String>, config: Config) -> CargoResult<()> {
-        let version = match version {
-            Some(v) => v,
-            None => {unimplemented!()}
+    pub fn clone(krate: &Option<String>,
+                 srcid: &SourceId,
+                 flag_version: &Option<String>,
+                 config: Config)
+                 -> CargoResult<()> {
+
+        let krate = match *krate {
+                Some(ref k) => k,
+                None => bail!("Specify which package to clone!"),
         };
 
-        let package_id = try!(PackageId::new(&krate, &version, source_id));
+        let mut regsrc = RegistrySource::new(&srcid, &config);
+        try!(regsrc.update());
 
-        let mut registry_source = RegistrySource::new(&source_id, &config);
+        let dep = try!(Dependency::parse(krate, flag_version.as_ref().map(|s| &s[..]), &srcid));
+        let summaries = try!(regsrc.query(&dep));
 
-        try!(registry_source.update());
-        try!(registry_source.download(&[package_id.clone()]));
+        let latest = summaries.iter().max_by_key(|s| s.version());
 
-        let crates = try!(registry_source.get(&[package_id.clone()]));
+        let version = match latest {
+            Some(l) => l.version(),
+            None => bail!("Package '{}' not found", krate),
+        };
 
-        println!("DONE: {:?}", crates[0].root());
+        let pkgid = try!(PackageId::new(&krate, version, srcid));
 
-        // create dir and copy files over
+        try!(regsrc.download(&[pkgid.clone()]));
+
+        let crates = try!(regsrc.get(&[pkgid.clone()]));
+        let dest_path = PathBuf::new();
+
+        try!(clone_directory(crates[0].root(), &dest_path));
+
         Ok(())
     }
 
