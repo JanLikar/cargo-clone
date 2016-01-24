@@ -4,8 +4,7 @@ extern crate rustc_serialize;
 extern crate cargo_clone;
 
 use cargo::core::SourceId;
-use cargo::util::{Config, CliResult, human};
-use cargo::util::errors::CliError;
+use cargo::util::{Config, CliResult};
 
 use docopt::Docopt;
 
@@ -55,7 +54,7 @@ pub fn execute(options: Options, config: Config) -> CliResult<Option<()>> {
 
     let source_id = try!(SourceId::for_central(&config));
 
-    try!(cargo_clone::ops::clone(&options.arg_crate, &source_id, &options.flag_vers, config));
+    try!(cargo_clone::ops::clone(&options.arg_crate, &source_id, options.flag_vers, config));
 
     Ok(None)
 }
