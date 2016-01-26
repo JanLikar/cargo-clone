@@ -4,6 +4,7 @@ version = "0.1.0"
 dependencies = [
  "cargo 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "docopt 0.6.78 (registry+https://github.com/rust-lang/crates.io-index)",
+ "itertools 0.4.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "rustc-serialize 0.3.16 (registry+https://github.com/rust-lang/crates.io-index)",
  "walkdir 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -188,6 +189,11 @@ dependencies = [
 [[package]]
 name = "glob"
 version = "0.2.10"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "itertools"
+version = "0.4.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
