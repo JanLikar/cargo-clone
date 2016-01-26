@@ -1,5 +1,6 @@
 extern crate cargo;
 extern crate walkdir;
+extern crate itertools;
 
 macro_rules! bail {
     ($($fmt:tt)*) => (
@@ -21,6 +22,8 @@ pub mod ops {
     use cargo::sources::RegistrySource;
 
     use walkdir::{DirEntry, WalkDir, WalkDirIterator};
+    use itertools::Itertools;
+    use itertools::EitherOrBoth::{Both, Left, Right};
 
     pub fn clone(krate: &Option<String>,
                  srcid: &SourceId,
@@ -42,7 +45,6 @@ pub mod ops {
                     Ok(v) => v,
                     Err(e) => bail!("{}", e),
                 }
-
             },
             None => {
                 let dep = try!(Dependency::parse(krate, flag_version.as_ref().map(|s| &s[..]), &srcid));
@@ -82,4 +84,26 @@ pub mod ops {
         Ok(())
     }
 
+    // When Path.strip_prefix() lands, this can be removed
+    fn strip_prefix(prefix: &Path, path: &Path) -> PathBuf {
+        assert!(path.starts_with(prefix));
+        let mut ret = PathBuf::new();
+        for e in path.iter().zip_longest(prefix) {
+            match e {
+                Both(..) => continue,
+                Left(a) => ret.push(a),
+                Right(_) => unreachable!(),
+            }
+        }
+
+        ret
+    }
+
+    #[test]
+    fn test_strip_prefix() {
+        let r = Path::new("foo/bar.py");
+        let prefix = Path::new("/home/john/");
+        let path = Path::new("/home/john/foo/bar.py");
+        assert_eq!(r, strip_prefix(prefix, path));
+    }
 }
