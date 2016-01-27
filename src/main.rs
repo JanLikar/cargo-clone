@@ -30,12 +30,12 @@ pub struct Options {
 
 pub const USAGE: &'static str = "
 Clone source code of a Rust crate
+
 Usage:
     cargo clone [options] [<crate>]
 
 Options:
     --vers VERS               Specify a version to clone from crates.io
-
     -h, --help                Print this message
     -v, --verbose             Use verbose output
     -q, --quiet               Less output printed to stdout
@@ -58,7 +58,7 @@ pub fn execute(options: Options, config: Config) -> CliResult<Option<()>> {
     try!(config.shell().set_verbosity(options.flag_verbose, options.flag_quiet));
     try!(config.shell().set_color_config(options.flag_color.as_ref().map(|s| &s[..])));
 
-    // Make a SourceId for the default Registry (usually crates.io)
+    // Make a SourceId for the central Registry (usually crates.io)
     let source_id = try!(SourceId::for_central(&config));
 
     try!(cargo_clone::ops::clone(&options.arg_crate, &source_id, options.flag_vers, config));
