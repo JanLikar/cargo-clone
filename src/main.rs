@@ -31,7 +31,7 @@ pub struct Options {
 pub const USAGE: &'static str = "
 Clone source code of a Rust crate
 Usage:
-    cargo-clone [options] [<crate>]
+    cargo clone [options] [<crate>]
 
 Options:
     --vers VERS               Specify a version to clone from crates.io
