@@ -21,7 +21,7 @@ pub mod ops {
     use cargo::core::dependency::Dependency;
     use cargo::sources::RegistrySource;
 
-    use walkdir::{DirEntry, WalkDir, WalkDirIterator};
+    use walkdir::WalkDir;
     use itertools::Itertools;
     use itertools::EitherOrBoth::{Both, Left, Right};
 
@@ -73,12 +73,18 @@ pub mod ops {
     }
 
     fn clone_directory(from: &Path, to: &Path) -> CargoResult<()> {
-        try!(fs::create_dir(to));
-
         for entry in WalkDir::new(from) {
             let entry = entry.unwrap();
-            //try!(fs::copy(from, to));
-            println!("{}", entry.path().display());
+            let file_type = entry.file_type();
+            let mut to = to.to_owned();
+            to.push(&strip_prefix(from, entry.path()));
+
+            if file_type.is_file() {
+                try!(fs::copy(&entry.path(), &to));
+            }
+            else if file_type.is_dir() {
+                try!(fs::create_dir(&to));
+            }
         }
 
         Ok(())

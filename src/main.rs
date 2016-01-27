@@ -13,7 +13,6 @@ pub struct Options {
     flag_verbose: bool,
     flag_quiet: bool,
     flag_color: Option<String>,
-    flag_root: Option<String>,
 
     arg_crate: Option<String>,
     flag_vers: Option<String>,
@@ -22,13 +21,13 @@ pub struct Options {
 }
 
 pub const USAGE: &'static str = "
-Download source code of a Rust crate
+Clone source code of a Rust crate
 Usage:
     cargo-clone [options] [<crate>]
 
-Specifying what crate to clone:
+Options:
     --vers VERS               Specify a version to clone from crates.io
-Build and install options:
+
     -h, --help                Print this message
     -v, --verbose             Use verbose output
     -q, --quiet               Less output printed to stdout
@@ -42,9 +41,8 @@ fn main() {
 
     let config = Config::default().expect("Unable to get config");
 
-    match execute(options, config) {
-        Ok(_) => {}
-        Err(e) => println!("{}", e.to_string()),
+    if let Err(e) = execute(options, config) {
+        println!("{}", e.to_string())
     }
 }
 
@@ -52,6 +50,7 @@ pub fn execute(options: Options, config: Config) -> CliResult<Option<()>> {
     try!(config.shell().set_verbosity(options.flag_verbose, options.flag_quiet));
     try!(config.shell().set_color_config(options.flag_color.as_ref().map(|s| &s[..])));
 
+    // Make a SourceId for the default Registry (usually crates.io)
     let source_id = try!(SourceId::for_central(&config));
 
     try!(cargo_clone::ops::clone(&options.arg_crate, &source_id, options.flag_vers, config));
