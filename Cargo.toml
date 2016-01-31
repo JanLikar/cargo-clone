@@ -2,6 +2,13 @@
 name = "cargo-clone"
 version = "0.1.0"
 authors = ["Jan Likar <likar.jan@gmail.com>"]
+description = "A cargo subcommand to fetch the source code of a Rust crate"
+documentation = "https://github.com/JanLikar/cargo-clone"
+homepage = "https://github.com/JanLikar/cargo-clone"
+repository = "https://github.com/JanLikar/cargo-clone"
+readme = "README.md"
+keywords = ["cargo", "subcommand", "clone"]
+license = "Apache-2.0/MIT"
 
 [dependencies]
 cargo = "0.7.0"
