@@ -21,6 +21,7 @@ pub struct Options {
     flag_verbose: bool,
     flag_quiet: bool,
     flag_color: Option<String>,
+    flag_version: bool,
 
     arg_crate: Option<String>,
     flag_vers: Option<String>,
@@ -37,6 +38,7 @@ Usage:
 Options:
     --vers VERS               Specify a version to clone from crates.io
     -h, --help                Print this message
+    -V, --version             Print version information
     -v, --verbose             Use verbose output
     -q, --quiet               Less output printed to stdout
     --color WHEN              Coloring: auto, always, never
@@ -44,14 +46,22 @@ Options:
 
 fn main() {
     let options: Options = Docopt::new(USAGE)
-                               .and_then(|d| d.decode())
-                               .unwrap_or_else(|e| e.exit());
+                                  .and_then(|d| d.version(Some(version())).decode())
+                                  .unwrap_or_else(|e| e.exit());
 
     let config = Config::default().expect("Unable to get config");
 
     if let Err(e) = execute(options, config) {
         println!("{}", e.to_string())
     }
+}
+
+fn version() -> String {
+    format!("cargo-clone {}.{}.{}{}",
+            option_env!("CARGO_PKG_VERSION_MAJOR").unwrap_or("X"),
+            option_env!("CARGO_PKG_VERSION_MINOR").unwrap_or("X"),
+            option_env!("CARGO_PKG_VERSION_PATCH").unwrap_or("X"),
+            option_env!("CARGO_PKG_VERSION_PRE").unwrap_or(""))
 }
 
 pub fn execute(options: Options, config: Config) -> CliResult<Option<()>> {
