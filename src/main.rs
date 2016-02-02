@@ -11,6 +11,8 @@ extern crate docopt;
 extern crate rustc_serialize;
 extern crate cargo_clone;
 
+use std::io::{self, Write};
+
 use cargo::core::SourceId;
 use cargo::util::{Config, CliResult};
 
@@ -52,7 +54,8 @@ fn main() {
     let config = Config::default().expect("Unable to get config");
 
     if let Err(e) = execute(options, config) {
-        println!("{}", e.to_string())
+        write!(io::stderr(), "{}\n", e.to_string()).unwrap();
+        std::process::exit(101);
     }
 }
 
