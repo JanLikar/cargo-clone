@@ -27,7 +27,7 @@ test!(unknown_package {
                  .arg("clone") // To make docopt happy
                  .arg("foobarfoofoobarbar"), // Hopefully this package does not exist
                 execs().with_status(101).with_stderr("\
-BLABLA
+package `foobarfoofoobarbar` not found.
 "));
 });
 
