@@ -69,13 +69,12 @@ pub mod ops {
 
         let pkgid = try!(PackageId::new(&krate, version, srcid));
 
-        try!(regsrc.download(&[pkgid.clone()]));
+        let krate = try!(regsrc.download(&pkgid.clone()));
 
-        let crates = try!(regsrc.get(&[pkgid.clone()]));
         let mut dest_path = try!(env::current_dir());
-        dest_path.push(krate);
+        dest_path.push(krate.name());
 
-        try!(clone_directory(crates[0].root(), &dest_path));
+        try!(clone_directory(&krate.root(), &dest_path));
 
         Ok(())
     }
