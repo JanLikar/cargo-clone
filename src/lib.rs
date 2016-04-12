@@ -94,7 +94,8 @@ pub mod ops {
             let mut to = to.to_owned();
             to.push(entry.path().strip_prefix(from).unwrap());
 
-            if file_type.is_file() {
+            if file_type.is_file() && entry.file_name() != ".cargo-ok" {
+                // .cargo-ok is not wanted in this context
                 try!(fs::copy(&entry.path(), &to));
             }
             else if file_type.is_dir() {

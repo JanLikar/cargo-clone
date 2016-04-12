@@ -5,6 +5,17 @@ use support::{COMPILING, RUNNING};
 
 use hamcrest::assert_that;
 
+macro_rules! test {
+    ($name:ident $expr:expr) => (
+        #[test]
+        fn $name() {
+            ::support::paths::setup();
+            setup();
+            $expr;
+        }
+    )
+}
+
 fn setup() {
 }
 
