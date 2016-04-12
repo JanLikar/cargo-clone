@@ -10,7 +10,6 @@ dependencies = [
  "git2 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "git2-curl 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "hamcrest 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "itertools 0.4.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "kernel32-sys 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "rustc-serialize 0.3.16 (registry+https://github.com/rust-lang/crates.io-index)",
  "tar 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -214,11 +213,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "num 0.1.30 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
-
-[[package]]
-name = "itertools"
-version = "0.4.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "kernel32-sys"
