@@ -16,7 +16,7 @@ macro_rules! bail {
 }
 
 pub mod ops {
-    use std::path::Path;
+    use std::path::{Path, PathBuf};
     use std::fs;
     use std::env;
 
@@ -30,13 +30,14 @@ pub mod ops {
 
     use walkdir::WalkDir;
 
-    pub fn clone(krate: &Option<String>,
+    pub fn clone(krate: Option<&str>,
                  srcid: &SourceId,
-                 flag_version: Option<String>,
+                 prefix: Option<&str>,
+                 vers: Option<&str>,
                  config: Config)
                  -> CargoResult<()> {
 
-        let krate = match *krate {
+        let krate = match krate {
                 Some(ref k) => k,
                 None => bail!("specify which package to clone!"),
         };
@@ -55,7 +56,7 @@ pub mod ops {
 
         try!(src.update());
 
-        let version = match flag_version {
+        let vers = match vers {
             Some(v) => {
                 match v.to_semver() {
                     Ok(v) => v,
@@ -63,7 +64,7 @@ pub mod ops {
                 }
             },
             None => {
-                let dep = try!(Dependency::parse(krate, flag_version.as_ref().map(|s| &s[..]), &srcid));
+                let dep = try!(Dependency::parse(krate, vers.as_ref().map(|s| &s[..]), &srcid));
                 let summaries = try!(src.query(&dep));
 
                 let latest = summaries.iter().max_by_key(|s| s.version());
@@ -75,11 +76,15 @@ pub mod ops {
             },
         };
 
-        let pkgid = try!(PackageId::new(&krate, version, srcid));
-
+        let pkgid = try!(PackageId::new(&krate, vers, srcid));
         let krate = try!(src.download(&pkgid.clone()));
 
-        let mut dest_path = try!(env::current_dir());
+        // If prefix was not supplied, clone into current dir
+        let mut dest_path = match prefix {
+            Some(path) => PathBuf::from(path),
+            None => try!(env::current_dir())
+        };
+
         dest_path.push(krate.name());
 
         try!(clone_directory(&krate.root(), &dest_path));

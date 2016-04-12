@@ -25,6 +25,8 @@ pub struct Options {
     flag_color: Option<String>,
     flag_version: Option<bool>,
 
+    flag_prefix: Option<String>,
+
     arg_crate: Option<String>,
     flag_vers: Option<String>,
 
@@ -43,6 +45,8 @@ Usage:
     cargo clone [options] [<crate>]
 
 Options:
+    --prefix DIR              Directory to clone the package into
+
     --vers VERS               Specify a version to clone from crates.io
 
     --git URL                 Git URL to clone the specified crate from
@@ -112,7 +116,15 @@ pub fn execute(options: Options, config: Config) -> CliResult<Option<()>> {
         (Some(_), Some(_)) => panic!("--path and --git flags are incompatible."),
     };
 
-    try!(cargo_clone::ops::clone(&options.arg_crate, &source_id, options.flag_vers, config));
+    let krate = options.arg_crate.as_ref().map(|s| &s[..]);
+    let prefix = options.flag_prefix.as_ref().map(|s| &s[..]);
+    let vers = options.flag_vers.as_ref().map(|s| &s[..]);
+
+    try!(cargo_clone::ops::clone(krate,
+                                 &source_id,
+                                 prefix,
+                                 vers,
+                                 config));
 
     Ok(None)
 }
