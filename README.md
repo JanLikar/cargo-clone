@@ -5,9 +5,9 @@ which will eventually be bundled with Cargo.
 
 cargo-clone can be used to fetch the source code of a Rust crate.
 
-It can be installed by using the install subcommand
+It can be installed using the install subcommand
 
-    cargo install --git https://github.com/JanLikar/cargo-clone
+    cargo install cargo-clone
 
 and can be used like this:
 
