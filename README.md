@@ -1,4 +1,10 @@
-# Cargo-clone
+                                          _                  
+      ___ __ _ _ __ __ _  ___         ___| | ___  _ __   ___ 
+     / __/ _` | '__/ _` |/ _ \ _____ / __| |/ _ \| '_ \ / _ \
+    | (_| (_| | | | (_| | (_) |_____| (__| | (_) | | | |  __/
+     \___\__,_|_|  \__, |\___/       \___|_|\___/|_| |_|\___|
+                   |___/                                     
+
 cargo-clone is a
 [Cargo subcommand](https://github.com/rust-lang/cargo/wiki/Third-party-cargo-subcommands)
 which will eventually be bundled with Cargo.
