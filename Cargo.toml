@@ -1,6 +1,6 @@
 [package]
 name = "cargo-clone"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Jan Likar <likar.jan@gmail.com>"]
 description = "A cargo subcommand to fetch the source code of a Rust crate"
 documentation = "https://github.com/JanLikar/cargo-clone"
