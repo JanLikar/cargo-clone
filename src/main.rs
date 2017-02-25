@@ -54,7 +54,7 @@ fn main() {
                                   .and_then(|d| d.version(Some(version())).decode())
                                   .unwrap_or_else(|e| e.exit());
 
-    let config = Config::default().expect("Unable to get config");
+    let config = Config::default().expect("Unable to get config.");
 
     if let Err(e) = execute(options, config) {
         write!(io::stderr(), "{}\n", e.to_string()).unwrap();
@@ -71,12 +71,20 @@ fn version() -> String {
 }
 
 pub fn execute(options: Options, config: Config) -> CliResult<Option<()>> {
-    try!(config.configure_shell(options.flag_verbose,
-                                options.flag_quiet,
-                                &options.flag_color));
+    let verbose = match options.flag_verbose {
+        Some(v) => if v {1} else {0},
+        None => 0,
+    };
+    try!(config.configure(
+        verbose,
+        options.flag_quiet,
+        &options.flag_color,
+        false,
+        false,
+    ));
 
     // Make a SourceId for the central Registry (usually crates.io)
-    let source_id = try!(SourceId::for_central(&config));
+    let source_id = try!(SourceId::crates_io(&config));
 
     let krate = options.arg_crate.as_ref().map(|s| &s[..]);
     let prefix = options.flag_prefix.as_ref().map(|s| &s[..]);
