@@ -43,7 +43,7 @@ pub mod ops {
         };
 
         let mut src = if srcid.is_registry() {
-            RegistrySource::new(&srcid, &config)
+            RegistrySource::remote(&srcid, &config)
         }
         else if srcid.is_path(){
             //PathSource::new(PATH , &srcid, &config)
@@ -64,7 +64,8 @@ pub mod ops {
                 }
             },
             None => {
-                let dep = try!(Dependency::parse(krate, vers.as_ref().map(|s| &s[..]), &srcid));
+                let dep = try!(Dependency::parse_no_deprecated(
+                    krate, vers.as_ref().map(|s| &s[..]), &srcid));
                 let summaries = try!(src.query(&dep));
 
                 let latest = summaries.iter().max_by_key(|s| s.version());
