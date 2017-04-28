@@ -12,7 +12,7 @@ extern crate rustc_serialize;
 extern crate cargo_clone;
 
 use cargo::core::{SourceId, GitReference};
-use cargo::util::{Config, CliResult, ToUrl};
+use cargo::util::{Config, CliResult, ToUrl, human};
 
 use docopt::Docopt;
 
@@ -108,6 +108,10 @@ pub fn execute(options: Options, config: &Config) -> CliResult<Option<()>> {
         SourceId::for_git(&url, gitref)
     } else if let Some(path) = options.flag_path {
         SourceId::for_path(&config.cwd().join(path))?
+    } else if options.arg_crate == None {
+        return Err(human("must specify a crate to clone from \
+                   crates.io, or use --path or --git to \
+                   specify alternate source").into());
     } else {
         SourceId::crates_io(config)?
     };
