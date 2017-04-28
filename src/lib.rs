@@ -22,11 +22,10 @@ pub mod ops {
 
     use cargo::util::{CargoResult, Config, human};
     use cargo::util::to_semver::ToSemver;
-    use cargo::core::package_id::PackageId;
+    use cargo::core::Package;
     use cargo::core::source::{Source, SourceId};
-    use cargo::core::registry::Registry;
     use cargo::core::dependency::Dependency;
-    use cargo::sources::RegistrySource;
+    use cargo::sources::{GitSource, PathSource, SourceConfigMap};
 
     use walkdir::WalkDir;
 
@@ -34,51 +33,28 @@ pub mod ops {
                  srcid: &SourceId,
                  prefix: Option<&str>,
                  vers: Option<&str>,
-                 config: Config)
+                 config: &Config)
                  -> CargoResult<()> {
+        let map = SourceConfigMap::new(config)?;
+        let pkg = if srcid.is_path(){
+            let path = srcid.url().to_file_path().ok().expect("path must be valid");
+            let mut src = PathSource::new(&path, srcid, config);
+            src.update()?;
 
-        let krate = match krate {
-                Some(ref k) => k,
-                None => bail!("specify which package to clone!"),
-        };
-
-        let mut src = if srcid.is_registry() {
-            RegistrySource::remote(&srcid, &config)
+            select_pkg(src, krate, vers, &mut |path| path.read_packages())?
         }
-        else if srcid.is_path(){
-            //PathSource::new(PATH , &srcid, &config)
-            unimplemented!();
-        }
-        else {
-            //GitSource::new(&srcid, &config)
-            unimplemented!();
+        else if srcid.is_git() {
+            select_pkg(GitSource::new(srcid, config),
+                       krate, vers, &mut |git| git.read_packages())?
+        } else {
+            select_pkg(map.load(srcid)?,
+                       krate, vers,
+                       &mut |_| Err(human("must specify a crate to clone from \
+                                          crates.io, or use --path or --git to \
+                                          specify alternate source")))?
         };
 
-        try!(src.update());
 
-        let vers = match vers {
-            Some(v) => {
-                match v.to_semver() {
-                    Ok(v) => v,
-                    Err(e) => bail!("{}", e),
-                }
-            },
-            None => {
-                let dep = try!(Dependency::parse_no_deprecated(
-                    krate, vers.as_ref().map(|s| &s[..]), &srcid));
-                let summaries = try!(src.query(&dep));
-
-                let latest = summaries.iter().max_by_key(|s| s.version());
-
-                match latest {
-                    Some(l) => l.version().to_semver().unwrap(),
-                    None => bail!("package '{}' not found", krate),
-                }
-            },
-        };
-
-        let pkgid = try!(PackageId::new(&krate, vers, srcid));
-        let krate = try!(src.download(&pkgid.clone()));
 
         // If prefix was not supplied, clone into current dir
         let mut dest_path = match prefix {
@@ -86,11 +62,54 @@ pub mod ops {
             None => try!(env::current_dir())
         };
 
-        dest_path.push(krate.name());
+        dest_path.push(pkg.name());
 
-        try!(clone_directory(&krate.root(), &dest_path));
+        try!(clone_directory(&pkg.root(), &dest_path));
 
         Ok(())
+    }
+
+    fn select_pkg<'a, T>(mut src: T,
+                          name: Option<&str>,
+                          vers: Option<&str>,
+                          list_all: &mut FnMut(&mut T) -> CargoResult<Vec<Package>>)
+                          -> CargoResult<Package>
+        where T: Source + 'a
+    {
+        src.update()?;
+
+        match name {
+            Some(name) => {
+                let vers = match vers {
+                    Some(v) => {
+                        match v.to_semver() {
+                            Ok(v) => Some(v.to_string()),
+                            Err(e) => bail!("{}", e),
+                        }
+                    },
+                    None => None
+                };
+                let vers = vers.as_ref().map(|s| &**s);
+                let dep = try!(Dependency::parse_no_deprecated(
+                    name, vers, src.source_id()));
+                let summaries = try!(src.query(&dep));
+
+                let latest = summaries.iter().max_by_key(|s| s.version());
+
+                match latest {
+                    Some(l) => {
+                        let pkg = src.download(l.package_id())?;
+                        Ok(pkg)
+                    }
+                    None => bail!("package '{}' not found", name),
+                }
+            }
+            None => {
+                let candidates = list_all(&mut src)?;
+                Ok(candidates[0].clone())
+            }
+        }
+
     }
 
     fn clone_directory(from: &Path, to: &Path) -> CargoResult<()> {
