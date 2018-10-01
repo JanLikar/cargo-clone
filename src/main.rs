@@ -8,15 +8,21 @@
 
 extern crate cargo;
 extern crate docopt;
+#[macro_use]
+extern crate failure;
+extern crate serde;
+#[macro_use]
+extern crate serde_derive;
 extern crate rustc_serialize;
 extern crate cargo_clone;
 
 use cargo::core::{SourceId, GitReference};
-use cargo::util::{Config, CliResult, ToUrl, human};
+use cargo::util::{Config, ToUrl};
 
 use docopt::Docopt;
+type Result<T> = std::result::Result<T, failure::Error>;
 
-#[derive(RustcDecodable, Debug)]
+#[derive(Deserialize, Debug)]
 pub struct Options {
     flag_verbose: Option<bool>,
     flag_quiet: Option<bool>,
@@ -62,12 +68,13 @@ Options:
 
 fn main() {
     let options: Options = Docopt::new(USAGE)
-                                  .and_then(|d| d.version(Some(version())).decode())
+                                  .and_then(|d|
+                                            d.version(Some(version())).deserialize())
                                   .unwrap_or_else(|e| e.exit());
 
-    let config = Config::default().expect("Unable to get config.");
+    let mut config = Config::default().expect("Unable to get config.");
 
-    if let Err(e) = execute(options, &config) {
+    if let Err(e) = execute(options, &mut config) {
         config.shell().error(e).unwrap();
         std::process::exit(101);
     }
@@ -81,7 +88,7 @@ fn version() -> String {
             option_env!("CARGO_PKG_VERSION_PRE").unwrap_or(""))
 }
 
-pub fn execute(options: Options, config: &Config) -> CliResult<Option<()>> {
+pub fn execute(options: Options, config: &mut Config) -> Result<Option<()>> {
     let verbose = match options.flag_verbose {
         Some(v) => if v {1} else {0},
         None => 0,
@@ -92,6 +99,8 @@ pub fn execute(options: Options, config: &Config) -> CliResult<Option<()>> {
         &options.flag_color,
         false,
         false,
+        &None,
+        &[]
     ));
 
     let source_id = if let Some(url) = options.flag_git {
@@ -105,13 +114,13 @@ pub fn execute(options: Options, config: &Config) -> CliResult<Option<()>> {
         } else {
             GitReference::Branch("master".to_string())
         };
-        SourceId::for_git(&url, gitref)
+        SourceId::for_git(&url, gitref)?
     } else if let Some(path) = options.flag_path {
         SourceId::for_path(&config.cwd().join(path))?
     } else if options.arg_crate == None {
-        return Err(human("must specify a crate to clone from \
+        bail!("must specify a crate to clone from \
                    crates.io, or use --path or --git to \
-                   specify alternate source").into());
+                   specify alternate source");
     } else {
         SourceId::crates_io(config)?
     };
