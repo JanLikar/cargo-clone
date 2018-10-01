@@ -6,21 +6,17 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
+#[macro_use]
+extern crate failure;
 extern crate cargo;
 extern crate walkdir;
-
-macro_rules! bail {
-    ($($fmt:tt)*) => (
-        return Err(human(&format_args!($($fmt)*)))
-    )
-}
 
 pub mod ops {
     use std::path::{Path, PathBuf};
     use std::fs;
     use std::env;
 
-    use cargo::util::{CargoResult, Config, human};
+    use cargo::util::{CargoResult, Config};
     use cargo::util::to_semver::ToSemver;
     use cargo::core::Package;
     use cargo::core::source::{Source, SourceId};
@@ -44,14 +40,14 @@ pub mod ops {
             select_pkg(src, krate, vers, &mut |path| path.read_packages())?
         }
         else if srcid.is_git() {
-            select_pkg(GitSource::new(srcid, config),
+            select_pkg(GitSource::new(srcid, config)?,
                        krate, vers, &mut |git| git.read_packages())?
         } else {
             select_pkg(map.load(srcid)?,
                        krate, vers,
-                       &mut |_| Err(human("must specify a crate to clone from \
+                       &mut |_| bail!("must specify a crate to clone from \
                                           crates.io, or use --path or --git to \
-                                          specify alternate source")))?
+                                          specify alternate source"))?
         };
 
 
@@ -62,7 +58,7 @@ pub mod ops {
             None => try!(env::current_dir())
         };
 
-        dest_path.push(pkg.name());
+        dest_path.push(format!("{}", pkg.name()));
 
         try!(clone_directory(&pkg.root(), &dest_path));
 
@@ -92,7 +88,8 @@ pub mod ops {
                 let vers = vers.as_ref().map(|s| &**s);
                 let dep = try!(Dependency::parse_no_deprecated(
                     name, vers, src.source_id()));
-                let summaries = try!(src.query(&dep));
+                let mut summaries = vec![];
+                try!(src.query(&dep, &mut |summary| summaries.push(summary.clone())));
 
                 let latest = summaries.iter().max_by_key(|s| s.version());
 
