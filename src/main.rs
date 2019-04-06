@@ -13,7 +13,6 @@ extern crate failure;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
-extern crate rustc_serialize;
 extern crate cargo_clone;
 
 use cargo::core::{SourceId, GitReference};
