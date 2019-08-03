@@ -19,6 +19,7 @@ use cargo::core::{SourceId, GitReference};
 use cargo::util::{Config, ToUrl};
 
 use docopt::Docopt;
+
 type Result<T> = std::result::Result<T, failure::Error>;
 
 #[derive(Deserialize, Debug)]
@@ -30,7 +31,7 @@ pub struct Options {
 
     flag_prefix: Option<String>,
 
-    arg_crate: Option<String>,
+    arg_crate: Vec<String>,
     flag_vers: Option<String>,
     flag_git: Option<String>,
     flag_branch: Option<String>,
@@ -44,7 +45,7 @@ pub const USAGE: &'static str = "
 Clone source code of a Rust crate
 
 Usage:
-    cargo clone [options] [<crate>]
+    cargo clone [options] [<crate>]...
 
 Options:
     --prefix DIR              Directory to clone the package into
@@ -67,9 +68,9 @@ Options:
 
 fn main() {
     let options: Options = Docopt::new(USAGE)
-                                  .and_then(|d|
-                                            d.version(Some(version())).deserialize())
-                                  .unwrap_or_else(|e| e.exit());
+        .and_then(|d|
+            d.version(Some(version())).deserialize())
+        .unwrap_or_else(|e| e.exit());
 
     let mut config = Config::default().expect("Unable to get config.");
 
@@ -89,18 +90,18 @@ fn version() -> String {
 
 pub fn execute(options: Options, config: &mut Config) -> Result<Option<()>> {
     let verbose = match options.flag_verbose {
-        Some(v) => if v {1} else {0},
+        Some(v) => if v { 1 } else { 0 },
         None => 0,
     };
-    try!(config.configure(
+    config.configure(
         verbose,
         options.flag_quiet,
         &options.flag_color,
         false,
         false,
         &None,
-        &[]
-    ));
+        &[],
+    )?;
 
     let source_id = if let Some(url) = options.flag_git {
         let url = url.to_url()?;
@@ -116,7 +117,7 @@ pub fn execute(options: Options, config: &mut Config) -> Result<Option<()>> {
         SourceId::for_git(&url, gitref)?
     } else if let Some(path) = options.flag_path {
         SourceId::for_path(&config.cwd().join(path))?
-    } else if options.arg_crate == None {
+    } else if options.arg_crate.len() == 0 {
         bail!("must specify a crate to clone from \
                    crates.io, or use --path or --git to \
                    specify alternate source");
@@ -124,15 +125,22 @@ pub fn execute(options: Options, config: &mut Config) -> Result<Option<()>> {
         SourceId::crates_io(config)?
     };
 
-    let krate = options.arg_crate.as_ref().map(|s| &s[..]);
     let prefix = options.flag_prefix.as_ref().map(|s| &s[..]);
     let vers = options.flag_vers.as_ref().map(|s| &s[..]);
-
-    try!(cargo_clone::ops::clone(krate,
-                                 &source_id,
-                                 prefix,
-                                 vers,
-                                 config));
-
+    if options.arg_crate.len() != 0 {
+        for item in options.arg_crate.iter() {
+            cargo_clone::ops::clone(Some(&item[..]),
+                                         &source_id,
+                                         prefix,
+                                         vers,
+                                         config)?;
+        }
+    } else {
+        cargo_clone::ops::clone(None,
+                                     &source_id,
+                                     prefix,
+                                     vers,
+                                     config)?;
+    }
     Ok(None)
 }
