@@ -17,4 +17,4 @@ It can be installed using the install subcommand
 
 and can be used like this:
 
-    cargo clone [options] [<crate>]
+    cargo clone [options] [<crate>]...
