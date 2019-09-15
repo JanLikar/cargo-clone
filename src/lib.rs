@@ -19,11 +19,12 @@ pub mod ops {
     use cargo::util::{CargoResult, Config};
     use cargo::util::to_semver::ToSemver;
     use cargo::core::Package;
-    use cargo::core::source::{Source, SourceId};
+    use cargo::core::source::{Source, SourceId, MaybePackage};
     use cargo::core::dependency::Dependency;
     use cargo::sources::{GitSource, PathSource, SourceConfigMap};
 
     use walkdir::WalkDir;
+    use std::collections::HashSet;
 
     pub fn clone(krate: Option<&str>,
                  srcid: &SourceId,
@@ -32,35 +33,36 @@ pub mod ops {
                  config: &Config)
                  -> CargoResult<()> {
         let map = SourceConfigMap::new(config)?;
+        let lock = config.acquire_package_cache_lock().unwrap_or_else(|v| {panic!();});
         let pkg = if srcid.is_path(){
             let path = srcid.url().to_file_path().ok().expect("path must be valid");
-            let mut src = PathSource::new(&path, srcid, config);
+            let mut src = PathSource::new(&path, srcid.clone(), config);
             src.update()?;
-
             select_pkg(src, krate, vers, &mut |path| path.read_packages())?
-        }
-        else if srcid.is_git() {
-            select_pkg(GitSource::new(srcid, config)?,
+        } else if srcid.is_git() {
+            select_pkg(GitSource::new(srcid.clone(), config)?,
                        krate, vers, &mut |git| git.read_packages())?
         } else {
-            select_pkg(map.load(srcid)?,
+            select_pkg(map.load(srcid.clone(), &HashSet::new())?,
                        krate, vers,
                        &mut |_| bail!("must specify a crate to clone from \
                                           crates.io, or use --path or --git to \
                                           specify alternate source"))?
         };
+        config.release_package_cache_lock();
 
 
 
         // If prefix was not supplied, clone into current dir
         let mut dest_path = match prefix {
             Some(path) => PathBuf::from(path),
-            None => try!(env::current_dir())
+            None => env::current_dir()?
         };
 
         dest_path.push(format!("{}", pkg.name()));
 
-        try!(clone_directory(&pkg.root(), &dest_path));
+
+        clone_directory(&pkg.root(), &dest_path)?;
 
         Ok(())
     }
@@ -72,6 +74,7 @@ pub mod ops {
                           -> CargoResult<Package>
         where T: Source + 'a
     {
+
         src.update()?;
 
         match name {
@@ -86,17 +89,20 @@ pub mod ops {
                     None => None
                 };
                 let vers = vers.as_ref().map(|s| &**s);
-                let dep = try!(Dependency::parse_no_deprecated(
-                    name, vers, src.source_id()));
+                let dep = Dependency::parse_no_deprecated(
+                    name, vers, src.source_id())?;
                 let mut summaries = vec![];
-                try!(src.query(&dep, &mut |summary| summaries.push(summary.clone())));
+                src.query(&dep, &mut |summary| summaries.push(summary.clone()))?;
 
                 let latest = summaries.iter().max_by_key(|s| s.version());
 
                 match latest {
                     Some(l) => {
                         let pkg = src.download(l.package_id())?;
-                        Ok(pkg)
+                        match pkg {
+                            MaybePackage::Ready(pkg) => Ok(pkg),
+                            _ => bail!("package '{}' not found", name),
+                        }
                     }
                     None => bail!("package '{}' not found", name),
                 }
@@ -118,10 +124,10 @@ pub mod ops {
 
             if file_type.is_file() && entry.file_name() != ".cargo-ok" {
                 // .cargo-ok is not wanted in this context
-                try!(fs::copy(&entry.path(), &to));
+                fs::copy(&entry.path(), &to)?;
             }
             else if file_type.is_dir() {
-                try!(fs::create_dir(&to));
+                fs::create_dir(&to)?;
             }
         }
 

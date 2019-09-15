@@ -16,7 +16,8 @@ extern crate serde_derive;
 extern crate cargo_clone;
 
 use cargo::core::{SourceId, GitReference};
-use cargo::util::{Config, ToUrl};
+use cargo::util::{Config};
+use cargo::util::IntoUrl;
 
 use docopt::Docopt;
 
@@ -99,12 +100,13 @@ pub fn execute(options: Options, config: &mut Config) -> Result<Option<()>> {
         &options.flag_color,
         false,
         false,
+        false,
         &None,
         &[],
     )?;
 
     let source_id = if let Some(url) = options.flag_git {
-        let url = url.to_url()?;
+        let url = url.into_url()?;
         let gitref = if let Some(rev) = options.flag_rev {
             GitReference::Rev(rev)
         } else if let Some(tag) = options.flag_tag {
