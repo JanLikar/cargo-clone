@@ -38,16 +38,16 @@ pub mod ops {
             let path = srcid.url().to_file_path().ok().expect("path must be valid");
             let mut src = PathSource::new(&path, srcid.clone(), config);
             src.update()?;
-            select_pkg(src, krate, vers, &mut |path| path.read_packages())?
+            select_pkg(src, krate, vers, &mut |path| path.read_packages(), config)?
         } else if srcid.is_git() {
             select_pkg(GitSource::new(srcid.clone(), config)?,
-                       krate, vers, &mut |git| git.read_packages())?
+                       krate, vers, &mut |git| git.read_packages(), config)?
         } else {
             select_pkg(map.load(srcid.clone(), &HashSet::new())?,
                        krate, vers,
                        &mut |_| bail!("must specify a crate to clone from \
                                           crates.io, or use --path or --git to \
-                                          specify alternate source"))?
+                                          specify alternate source"), config)?
         };
         config.release_package_cache_lock();
 
@@ -70,7 +70,8 @@ pub mod ops {
     fn select_pkg<'a, T>(mut src: T,
                           name: Option<&str>,
                           vers: Option<&str>,
-                          list_all: &mut FnMut(&mut T) -> CargoResult<Vec<Package>>)
+                          list_all: &mut FnMut(&mut T) -> CargoResult<Vec<Package>>,
+                        config: &Config)
                           -> CargoResult<Package>
         where T: Source + 'a
     {
@@ -101,7 +102,9 @@ pub mod ops {
                         let pkg = src.download(l.package_id())?;
                         match pkg {
                             MaybePackage::Ready(pkg) => Ok(pkg),
-                            _ => bail!("package '{}' not found", name),
+                            MaybePackage::Download {
+                                url: url, descriptor: desc
+                            } => Box::new(src).download_now(l.package_id(), config),
                         }
                     }
                     None => bail!("package '{}' not found", name),
