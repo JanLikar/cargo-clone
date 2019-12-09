@@ -31,19 +31,22 @@ pub mod ops {
                  vers: Option<&str>,
                  config: &Config)
                  -> CargoResult<()> {
+
+        let _lock = config.acquire_package_cache_lock()?;
+
         let map = SourceConfigMap::new(config)?;
         let pkg = if srcid.is_path(){
             let path = srcid.url().to_file_path().ok().expect("path must be valid");
-            let mut src = PathSource::new(&path, srcid, config);
+            let mut src = PathSource::new(&path, srcid.clone(), config);
             src.update()?;
 
-            select_pkg(src, krate, vers, &mut |path| path.read_packages())?
+            select_pkg(config, src, krate, vers, &mut |path| path.read_packages())?
         }
         else if srcid.is_git() {
-            select_pkg(GitSource::new(srcid, config)?,
+            select_pkg(config, GitSource::new(srcid.clone(), config)?,
                        krate, vers, &mut |git| git.read_packages())?
         } else {
-            select_pkg(map.load(srcid)?,
+            select_pkg(config, map.load(srcid.clone(), &Default::default())?,
                        krate, vers,
                        &mut |_| bail!("must specify a crate to clone from \
                                           crates.io, or use --path or --git to \
@@ -65,7 +68,8 @@ pub mod ops {
         Ok(())
     }
 
-    fn select_pkg<'a, T>(mut src: T,
+    fn select_pkg<'a, T>(config: &Config,
+                          mut src: T,
                           name: Option<&str>,
                           vers: Option<&str>,
                           list_all: &mut FnMut(&mut T) -> CargoResult<Vec<Package>>)
@@ -95,7 +99,7 @@ pub mod ops {
 
                 match latest {
                     Some(l) => {
-                        let pkg = src.download(l.package_id())?;
+                        let pkg = Box::new(src).download_now(l.package_id(), config)?;
                         Ok(pkg)
                     }
                     None => bail!("package '{}' not found", name),
