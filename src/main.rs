@@ -6,17 +6,14 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-
-
-#[macro_use]
-extern crate failure;
-
 use cargo_clone;
 
 use cargo::core::{GitReference, SourceId};
 use cargo::util::{into_url::IntoUrl, Config};
 
 use docopt::Docopt;
+
+use failure::bail;
 
 use serde::Deserialize;
 
