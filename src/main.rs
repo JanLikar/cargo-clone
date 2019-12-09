@@ -11,14 +11,14 @@
 #[macro_use]
 extern crate failure;
 
-#[macro_use]
-extern crate serde_derive;
 use cargo_clone;
 
 use cargo::core::{GitReference, SourceId};
 use cargo::util::{into_url::IntoUrl, Config};
 
 use docopt::Docopt;
+
+use serde::Deserialize;
 
 type Result<T> = std::result::Result<T, failure::Error>;
 
