@@ -9,6 +9,7 @@ name = "cargo-clone"
 readme = "README.md"
 repository = "https://github.com/JanLikar/cargo-clone"
 version = "0.1.3"
+edition = "2018"
 [dependencies]
 cargo = "0.40.0"
 docopt = "1.0.0"

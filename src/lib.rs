@@ -8,8 +8,8 @@
 
 #[macro_use]
 extern crate failure;
-extern crate cargo;
-extern crate walkdir;
+
+
 
 pub mod ops {
     use std::env;
