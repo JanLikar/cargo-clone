@@ -12,53 +12,63 @@ extern crate cargo;
 extern crate walkdir;
 
 pub mod ops {
-    use std::path::{Path, PathBuf};
-    use std::fs;
     use std::env;
+    use std::fs;
+    use std::path::{Path, PathBuf};
 
-    use cargo::util::{CargoResult, Config};
-    use cargo::util::to_semver::ToSemver;
-    use cargo::core::Package;
-    use cargo::core::source::{Source, SourceId};
     use cargo::core::dependency::Dependency;
+    use cargo::core::source::{Source, SourceId};
+    use cargo::core::Package;
     use cargo::sources::{GitSource, PathSource, SourceConfigMap};
+    use cargo::util::to_semver::ToSemver;
+    use cargo::util::{CargoResult, Config};
 
     use walkdir::WalkDir;
 
-    pub fn clone(krate: Option<&str>,
-                 srcid: &SourceId,
-                 prefix: Option<&str>,
-                 vers: Option<&str>,
-                 config: &Config)
-                 -> CargoResult<()> {
-
+    pub fn clone(
+        krate: Option<&str>,
+        srcid: &SourceId,
+        prefix: Option<&str>,
+        vers: Option<&str>,
+        config: &Config,
+    ) -> CargoResult<()> {
         let _lock = config.acquire_package_cache_lock()?;
 
         let map = SourceConfigMap::new(config)?;
-        let pkg = if srcid.is_path(){
+        let pkg = if srcid.is_path() {
             let path = srcid.url().to_file_path().ok().expect("path must be valid");
             let mut src = PathSource::new(&path, srcid.clone(), config);
             src.update()?;
 
             select_pkg(config, src, krate, vers, &mut |path| path.read_packages())?
-        }
-        else if srcid.is_git() {
-            select_pkg(config, GitSource::new(srcid.clone(), config)?,
-                       krate, vers, &mut |git| git.read_packages())?
+        } else if srcid.is_git() {
+            select_pkg(
+                config,
+                GitSource::new(srcid.clone(), config)?,
+                krate,
+                vers,
+                &mut |git| git.read_packages(),
+            )?
         } else {
-            select_pkg(config, map.load(srcid.clone(), &Default::default())?,
-                       krate, vers,
-                       &mut |_| bail!("must specify a crate to clone from \
-                                          crates.io, or use --path or --git to \
-                                          specify alternate source"))?
+            select_pkg(
+                config,
+                map.load(srcid.clone(), &Default::default())?,
+                krate,
+                vers,
+                &mut |_| {
+                    bail!(
+                        "must specify a crate to clone from \
+                         crates.io, or use --path or --git to \
+                         specify alternate source"
+                    )
+                },
+            )?
         };
-
-
 
         // If prefix was not supplied, clone into current dir
         let mut dest_path = match prefix {
             Some(path) => PathBuf::from(path),
-            None => try!(env::current_dir())
+            None => try!(env::current_dir()),
         };
 
         dest_path.push(format!("{}", pkg.name()));
@@ -68,30 +78,29 @@ pub mod ops {
         Ok(())
     }
 
-    fn select_pkg<'a, T>(config: &Config,
-                          mut src: T,
-                          name: Option<&str>,
-                          vers: Option<&str>,
-                          list_all: &mut FnMut(&mut T) -> CargoResult<Vec<Package>>)
-                          -> CargoResult<Package>
-        where T: Source + 'a
+    fn select_pkg<'a, T>(
+        config: &Config,
+        mut src: T,
+        name: Option<&str>,
+        vers: Option<&str>,
+        list_all: &mut FnMut(&mut T) -> CargoResult<Vec<Package>>,
+    ) -> CargoResult<Package>
+    where
+        T: Source + 'a,
     {
         src.update()?;
 
         match name {
             Some(name) => {
                 let vers = match vers {
-                    Some(v) => {
-                        match v.to_semver() {
-                            Ok(v) => Some(v.to_string()),
-                            Err(e) => bail!("{}", e),
-                        }
+                    Some(v) => match v.to_semver() {
+                        Ok(v) => Some(v.to_string()),
+                        Err(e) => bail!("{}", e),
                     },
-                    None => None
+                    None => None,
                 };
                 let vers = vers.as_ref().map(|s| &**s);
-                let dep = try!(Dependency::parse_no_deprecated(
-                    name, vers, src.source_id()));
+                let dep = try!(Dependency::parse_no_deprecated(name, vers, src.source_id()));
                 let mut summaries = vec![];
                 try!(src.query(&dep, &mut |summary| summaries.push(summary.clone())));
 
@@ -110,7 +119,6 @@ pub mod ops {
                 Ok(candidates[0].clone())
             }
         }
-
     }
 
     fn clone_directory(from: &Path, to: &Path) -> CargoResult<()> {
@@ -123,8 +131,7 @@ pub mod ops {
             if file_type.is_file() && entry.file_name() != ".cargo-ok" {
                 // .cargo-ok is not wanted in this context
                 try!(fs::copy(&entry.path(), &to));
-            }
-            else if file_type.is_dir() {
+            } else if file_type.is_dir() {
                 try!(fs::create_dir(&to));
             }
         }
