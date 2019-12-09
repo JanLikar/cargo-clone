@@ -36,6 +36,12 @@ pub struct Options {
     flag_rev: Option<String>,
 
     flag_path: Option<String>,
+
+    flag_alt_registry: Option<String>,
+
+    flag_registry_url: Option<String>,
+
+    flag_local_registry: Option<String>,
 }
 
 pub const USAGE: &'static str = "
@@ -55,6 +61,12 @@ Options:
     --rev SHA                 Specific commit to use when cloning from git
 
     --path PATH               Filesystem path to local crate to clone
+
+    --alt-registry NAME       A registry name from Cargo config to clone the specified crate from
+
+    --registry-url URL        A registry url to clone the specified crate from
+
+    --local-registry PATH     A local registry path to clone the specified crate from
 
     -h, --help                Print this message
     -V, --version             Print version information
@@ -122,6 +134,13 @@ pub fn execute(options: Options, config: &mut Config) -> Result<Option<()>> {
         SourceId::for_git(&url, gitref)?
     } else if let Some(path) = options.flag_path {
         SourceId::for_path(&config.cwd().join(path))?
+    } else if let Some(registry) = options.flag_alt_registry.as_ref() {
+        SourceId::alt_registry(config, registry)?
+    } else if let Some(url) = options.flag_registry_url.as_ref() {
+        let url = url.into_url()?;
+        SourceId::for_registry(&url)?
+    } else if let Some(path) = options.flag_local_registry.as_ref() {
+        SourceId::for_local_registry(&config.cwd().join(path))?
     } else if options.arg_crate.len() == 0 {
         bail!(
             "must specify a crate to clone from \
