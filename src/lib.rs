@@ -68,12 +68,12 @@ pub mod ops {
         // If prefix was not supplied, clone into current dir
         let mut dest_path = match prefix {
             Some(path) => PathBuf::from(path),
-            None => try!(env::current_dir()),
+            None => r#try!(env::current_dir()),
         };
 
         dest_path.push(format!("{}", pkg.name()));
 
-        try!(clone_directory(&pkg.root(), &dest_path));
+        r#try!(clone_directory(&pkg.root(), &dest_path));
 
         Ok(())
     }
@@ -83,7 +83,7 @@ pub mod ops {
         mut src: T,
         name: Option<&str>,
         vers: Option<&str>,
-        list_all: &mut FnMut(&mut T) -> CargoResult<Vec<Package>>,
+        list_all: &mut dyn FnMut(&mut T) -> CargoResult<Vec<Package>>,
     ) -> CargoResult<Package>
     where
         T: Source + 'a,
@@ -100,9 +100,9 @@ pub mod ops {
                     None => None,
                 };
                 let vers = vers.as_ref().map(|s| &**s);
-                let dep = try!(Dependency::parse_no_deprecated(name, vers, src.source_id()));
+                let dep = r#try!(Dependency::parse_no_deprecated(name, vers, src.source_id()));
                 let mut summaries = vec![];
-                try!(src.query(&dep, &mut |summary| summaries.push(summary.clone())));
+                r#try!(src.query(&dep, &mut |summary| summaries.push(summary.clone())));
 
                 let latest = summaries.iter().max_by_key(|s| s.version());
 
@@ -130,9 +130,9 @@ pub mod ops {
 
             if file_type.is_file() && entry.file_name() != ".cargo-ok" {
                 // .cargo-ok is not wanted in this context
-                try!(fs::copy(&entry.path(), &to));
+                r#try!(fs::copy(&entry.path(), &to));
             } else if file_type.is_dir() {
-                try!(fs::create_dir(&to));
+                r#try!(fs::create_dir(&to));
             }
         }
 
