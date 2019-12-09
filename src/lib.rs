@@ -6,11 +6,6 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-#[macro_use]
-extern crate failure;
-
-
-
 pub mod ops {
     use std::env;
     use std::fs;
@@ -22,6 +17,8 @@ pub mod ops {
     use cargo::sources::{GitSource, PathSource, SourceConfigMap};
     use cargo::util::to_semver::ToSemver;
     use cargo::util::{CargoResult, Config};
+
+    use failure::bail;
 
     use walkdir::WalkDir;
 
