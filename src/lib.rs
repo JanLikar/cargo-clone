@@ -63,12 +63,24 @@ pub mod ops {
         };
 
         // If prefix was not supplied, clone into current dir
-        let mut dest_path = match prefix {
+        let dest_path = match prefix {
             Some(path) => PathBuf::from(path),
-            None => env::current_dir()?,
+            None => {
+            	let mut dest = env::current_dir()?;
+            	dest.push(format!("{}", pkg.name()));
+            	dest
+            },
         };
 
-        dest_path.push(format!("{}", pkg.name()));
+        // Cloning into an existing directory is only allowed if the directory is empty.
+        if !dest_path.exists() {
+        	fs::create_dir_all(&dest_path)?;
+        } else {
+        	let is_empty = dest_path.read_dir()?.next().is_none();
+        	if !is_empty {
+        		bail!("destination path '{}' already exists and is not an empty directory.", dest_path.display());
+        	}
+        }
 
         clone_directory(&pkg.root(), &dest_path)?;
 
