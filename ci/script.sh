@@ -12,6 +12,12 @@ main() {
 
     cross test --target $TARGET
     cross test --target $TARGET --release
+
+    # Test that running the binary works in a few common cases.
+    ./target/rls/cargo-clone clone time
+    ./target/rls/cargo-clone clone --prefix /tmp/output/ time
+    mkdir /tmp/clone-into-existing
+    ./target/rls/cargo-clone clone --prefix /tmp/clone-into-existing time
 }
 
 # we don't run the "test phase" when doing deploys

@@ -130,18 +130,26 @@ pub mod ops {
         }
     }
 
+    // clone_directory copies the contents of one directory into another directory, which must
+    // already exist.
     fn clone_directory(from: &Path, to: &Path) -> CargoResult<()> {
+        if !to.is_dir() {
+            bail!("not a directory: {}", to.to_string_lossy());
+        }
         for entry in WalkDir::new(from) {
             let entry = entry.unwrap();
             let file_type = entry.file_type();
-            let mut to = to.to_owned();
-            to.push(entry.path().strip_prefix(from).unwrap());
+            let mut dest_path = to.to_owned();
+            dest_path.push(entry.path().strip_prefix(from).unwrap());
 
             if file_type.is_file() && entry.file_name() != ".cargo-ok" {
                 // .cargo-ok is not wanted in this context
-                fs::copy(&entry.path(), &to)?;
+                fs::copy(&entry.path(), &dest_path)?;
             } else if file_type.is_dir() {
-                fs::create_dir(&to)?;
+                if dest_path == to {
+                    continue
+                }
+                fs::create_dir(&dest_path)?;
             }
         }
 
