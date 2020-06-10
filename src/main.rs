@@ -6,8 +6,6 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use cargo_clone;
-
 use cargo::core::{GitReference, SourceId};
 use cargo::util::{into_url::IntoUrl, Config};
 
@@ -44,7 +42,7 @@ pub struct Options {
     flag_local_registry: Option<String>,
 }
 
-pub const USAGE: &'static str = "
+pub const USAGE: &str = "
 Clone source code of a Rust crate
 
 Usage:
@@ -141,7 +139,7 @@ pub fn execute(options: Options, config: &mut Config) -> Result<Option<()>> {
         SourceId::for_registry(&url)?
     } else if let Some(path) = options.flag_local_registry.as_ref() {
         SourceId::for_local_registry(&config.cwd().join(path))?
-    } else if options.arg_crate.len() == 0 {
+    } else if options.arg_crate.is_empty() {
         bail!(
             "must specify a crate to clone from \
              crates.io, or use --path or --git to \
@@ -153,7 +151,7 @@ pub fn execute(options: Options, config: &mut Config) -> Result<Option<()>> {
 
     let prefix = options.flag_prefix.as_ref().map(|s| &s[..]);
     let vers = options.flag_vers.as_ref().map(|s| &s[..]);
-    if options.arg_crate.len() != 0 {
+    if options.arg_crate.is_empty() {
         for item in options.arg_crate.iter() {
             cargo_clone::ops::clone(Some(&item[..]), &source_id, prefix, vers, config)?;
         }

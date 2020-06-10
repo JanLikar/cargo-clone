@@ -33,15 +33,15 @@ pub mod ops {
 
         let map = SourceConfigMap::new(config)?;
         let pkg = if srcid.is_path() {
-            let path = srcid.url().to_file_path().ok().expect("path must be valid");
-            let mut src = PathSource::new(&path, srcid.clone(), config);
+            let path = srcid.url().to_file_path().expect("path must be valid");
+            let mut src = PathSource::new(&path, *srcid, config);
             src.update()?;
 
             select_pkg(config, src, krate, vers, &mut |path| path.read_packages())?
         } else if srcid.is_git() {
             select_pkg(
                 config,
-                GitSource::new(srcid.clone(), config)?,
+                GitSource::new(*srcid, config)?,
                 krate,
                 vers,
                 &mut |git| git.read_packages(),
@@ -49,7 +49,7 @@ pub mod ops {
         } else {
             select_pkg(
                 config,
-                map.load(srcid.clone(), &Default::default())?,
+                map.load(*srcid, &Default::default())?,
                 krate,
                 vers,
                 &mut |_| {
@@ -66,20 +66,23 @@ pub mod ops {
         let dest_path = match prefix {
             Some(path) => PathBuf::from(path),
             None => {
-            	let mut dest = env::current_dir()?;
-            	dest.push(format!("{}", pkg.name()));
-            	dest
-            },
+                let mut dest = env::current_dir()?;
+                dest.push(format!("{}", pkg.name()));
+                dest
+            }
         };
 
         // Cloning into an existing directory is only allowed if the directory is empty.
         if !dest_path.exists() {
-        	fs::create_dir_all(&dest_path)?;
+            fs::create_dir_all(&dest_path)?;
         } else {
-        	let is_empty = dest_path.read_dir()?.next().is_none();
-        	if !is_empty {
-        		bail!("destination path '{}' already exists and is not an empty directory.", dest_path.display());
-        	}
+            let is_empty = dest_path.read_dir()?.next().is_none();
+            if !is_empty {
+                bail!(
+                    "destination path '{}' already exists and is not an empty directory.",
+                    dest_path.display()
+                );
+            }
         }
 
         clone_directory(&pkg.root(), &dest_path)?;
@@ -108,10 +111,10 @@ pub mod ops {
                     },
                     None => None,
                 };
-                let vers = vers.as_ref().map(|s| &**s);
+                let vers = vers.as_deref();
                 let dep = Dependency::parse_no_deprecated(name, vers, src.source_id())?;
                 let mut summaries = vec![];
-                src.query(&dep, &mut |summary| summaries.push(summary.clone()))?;
+                src.query(&dep, &mut |summary| summaries.push(summary))?;
 
                 let latest = summaries.iter().max_by_key(|s| s.version());
 
