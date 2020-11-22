@@ -151,7 +151,7 @@ pub fn execute(options: Options, config: &mut Config) -> Result<Option<()>> {
 
     let prefix = options.flag_prefix.as_ref().map(|s| &s[..]);
     let vers = options.flag_vers.as_ref().map(|s| &s[..]);
-    if options.arg_crate.is_empty() {
+    if !options.arg_crate.is_empty() {
         for item in options.arg_crate.iter() {
             cargo_clone::ops::clone(Some(&item[..]), &source_id, prefix, vers, config)?;
         }
