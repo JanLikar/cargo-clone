@@ -12,8 +12,9 @@ version = "0.1.4"
 edition = "2018"
 
 [dependencies]
-cargo = "0.40.0"
+anyhow = "1.0.52"
+cargo = "0.58.0"
 docopt = "1.0.0"
-failure = "0.1"
+semver = "1.0.4"
 serde = { version = "1.0.80", features = ["derive"] }
 walkdir = "1"

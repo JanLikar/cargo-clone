@@ -11,14 +11,15 @@ pub mod ops {
     use std::fs;
     use std::path::{Path, PathBuf};
 
+    use anyhow::{Context, bail};
+
     use cargo::core::dependency::Dependency;
     use cargo::core::source::{Source, SourceId};
     use cargo::core::Package;
     use cargo::sources::{GitSource, PathSource, SourceConfigMap};
-    use cargo::util::to_semver::ToSemver;
     use cargo::util::{CargoResult, Config};
 
-    use failure::bail;
+    use semver::VersionReq;
 
     use walkdir::WalkDir;
 
@@ -105,14 +106,11 @@ pub mod ops {
         match name {
             Some(name) => {
                 let vers = match vers {
-                    Some(v) => match v.to_semver() {
-                        Ok(v) => Some(v.to_string()),
-                        Err(e) => bail!("{}", e),
-                    },
+                    Some(v) => Some(parse_version_req(v)?),
                     None => None,
                 };
-                let vers = vers.as_deref();
-                let dep = Dependency::parse_no_deprecated(name, vers, src.source_id())?;
+
+                let dep = Dependency::parse(name, vers.as_deref(), src.source_id())?;
                 let mut summaries = vec![];
                 src.query(&dep, &mut |summary| summaries.push(summary))?;
 
@@ -130,6 +128,26 @@ pub mod ops {
                 let candidates = list_all(&mut src)?;
                 Ok(candidates[0].clone())
             }
+        }
+    }
+
+    fn parse_version_req(version: &str) -> CargoResult<String> {
+        // This function's main purpose is to treat "x.y.z" as "=x.y.z"
+        // so specifying the version in CLI works as expected.
+        let first = version.chars().next();
+
+        if first.is_none() {
+            bail!("No version provided for the `--vers` flag")
+        };
+
+        let is_req = "<>=^~".contains(first.unwrap()) || version.contains('*');
+
+        if is_req {
+            let vers = VersionReq::parse(version).with_context(|| format!("Invalid version requirement: `{}`.", version))?;
+            Ok(vers.to_string())
+        }
+        else {
+            Ok(format!("={}", version))
         }
     }
 
@@ -157,5 +175,22 @@ pub mod ops {
         }
 
         Ok(())
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+
+        #[test]
+        fn test_parse_version_req() {
+            assert_eq!("=12.4.5", parse_version_req("12.4.5").unwrap());
+            assert_eq!("=12.4.5", parse_version_req("=12.4.5").unwrap());
+            assert_eq!("12.2.*", parse_version_req("12.2.*").unwrap());
+        }
+
+        #[test]
+        fn test_parse_version_req_invalid_req() {
+            assert_eq!("Invalid version requirement: `=foo`.", parse_version_req("=foo").unwrap_err().to_string());
+        }
     }
 }
