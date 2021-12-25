@@ -6,71 +6,80 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
+use anyhow::bail;
+
 use cargo::core::SourceId;
 use cargo::util::{into_url::IntoUrl, Config};
 
-use docopt::Docopt;
-
-use anyhow::bail;
-
-use serde::Deserialize;
+use clap::Arg;
 
 type Result<T> = std::result::Result<T, anyhow::Error>;
 
-#[derive(Deserialize, Debug)]
-pub struct Options {
-    flag_verbose: Option<bool>,
-    flag_quiet: Option<bool>,
-    flag_color: Option<String>,
-
-    flag_prefix: Option<String>,
-
-    arg_crate: Option<String>,
-    flag_vers: Option<String>,
-
-    flag_path: Option<String>,
-
-    flag_alt_registry: Option<String>,
-
-    flag_registry_url: Option<String>,
-
-    flag_local_registry: Option<String>,
-}
-
-pub const USAGE: &str = "
-Clone source code of a Rust crate
-
-Usage:
-    cargo clone [options] [<crate>]
-
-Options:
-    --prefix DIR              Directory to clone the package into
-
-    --vers VERS               Specify a version to clone from crates.io
-
-    --path PATH               Filesystem path to local crate to clone
-
-    --alt-registry NAME       A registry name from Cargo config to clone the specified crate from
-
-    --registry-url URL        A registry url to clone the specified crate from
-
-    --local-registry PATH     A local registry path to clone the specified crate from
-
-    -h, --help                Print this message
-    -V, --version             Print version information
-    -v, --verbose             Use verbose output
-    -q, --quiet               Less output printed to stdout
-    --color WHEN              Coloring: auto, always, never
-";
-
 fn main() {
-    let options: Options = Docopt::new(USAGE)
-        .and_then(|d| d.version(Some(version())).deserialize())
-        .unwrap_or_else(|e| e.exit());
+    let version = version();
 
+    let app = clap::App::new("cargo-clone")
+        .bin_name("cargo clone")
+        .version(&*version)
+        .arg(
+            Arg::with_name("vers")
+                .long("vers")
+                .value_name("VERSION")
+                .help("Specify crate version."),
+        )
+        .arg(
+            Arg::with_name("color")
+                .long("color")
+                .value_name("COLORING")
+                .help("Coloring: auto, always, never")
+                .takes_value(true),
+        )
+        .arg(
+            Arg::with_name("verbose")
+                .short("v")
+                .help("Use verbose output."),
+        )
+        .arg(
+            Arg::with_name("quiet")
+                .short("q")
+                .help("Print less output to stdout."),
+        )
+        .arg(
+            Arg::with_name("prefix")
+                .long("prefix")
+                .value_name("PREFIX")
+                .help("Install under a different prefix."),
+        )
+        .arg(
+            Arg::with_name("path")
+                .long("path")
+                .value_name("PATH")
+                .help("Filesystem path to local crate to clone."),
+        )
+        .arg(
+            Arg::with_name("alt-registry")
+                .long("alt-registry")
+                .value_name("REGISTRY")
+                .help("A registry name from Cargo config to clone the specified crate from."),
+        )
+        .arg(
+            Arg::with_name("registry-url")
+                .long("registry-url")
+                .value_name("URL")
+                .help(" A registry url to clone the specified crate from."),
+        )
+        .arg(
+            Arg::with_name("local-registry")
+                .long("local-registry")
+                .value_name("PATH")
+                .help("A local registry path to clone the specified crate from."),
+        )
+        .arg(Arg::with_name("crate").help("The name of the crate to be downloaded."));
+
+    let matches = app.get_matches();
     let mut config = Config::default().expect("Unable to get config.");
 
-    if let Err(e) = execute(options, &mut config) {
+    if let Err(e) = execute(matches, &mut config) {
         config.shell().error(e).unwrap();
         std::process::exit(101);
     }
@@ -78,7 +87,7 @@ fn main() {
 
 fn version() -> String {
     format!(
-        "cargo-clone {}.{}.{}{}",
+        "{}.{}.{}{}",
         option_env!("CARGO_PKG_VERSION_MAJOR").unwrap_or("X"),
         option_env!("CARGO_PKG_VERSION_MINOR").unwrap_or("X"),
         option_env!("CARGO_PKG_VERSION_PATCH").unwrap_or("X"),
@@ -86,24 +95,13 @@ fn version() -> String {
     )
 }
 
-pub fn execute(options: Options, config: &mut Config) -> Result<Option<()>> {
-    let verbose = match options.flag_verbose {
-        Some(v) => {
-            if v {
-                1
-            } else {
-                0
-            }
-        }
-        None => 0,
-    };
-
-    let flag_quiet = options.flag_quiet.unwrap_or(false);
+pub fn execute(matches: clap::ArgMatches, config: &mut Config) -> Result<Option<()>> {
+    let verbose = if matches.is_present("verbose") { 1 } else { 0 };
 
     config.configure(
         verbose,
-        flag_quiet,
-        options.flag_color.as_deref(),
+        matches.is_present("quiet"),
+        matches.value_of("color"),
         false,
         false,
         false,
@@ -112,16 +110,16 @@ pub fn execute(options: Options, config: &mut Config) -> Result<Option<()>> {
         &[],
     )?;
 
-    let source_id = if let Some(path) = options.flag_path {
+    let source_id = if let Some(path) = matches.value_of("path") {
         SourceId::for_path(&config.cwd().join(path))?
-    } else if let Some(registry) = options.flag_alt_registry.as_ref() {
+    } else if let Some(registry) = matches.value_of("registry-name") {
         SourceId::alt_registry(config, registry)?
-    } else if let Some(url) = options.flag_registry_url.as_ref() {
+    } else if let Some(url) = matches.value_of("registry-url") {
         let url = url.into_url()?;
         SourceId::for_registry(&url)?
-    } else if let Some(path) = options.flag_local_registry.as_ref() {
+    } else if let Some(path) = matches.value_of("local-registry") {
         SourceId::for_local_registry(&config.cwd().join(path))?
-    } else if options.arg_crate.is_none() {
+    } else if matches.value_of("crate").is_none() {
         bail!(
             "must specify a crate to clone from \
              crates.io, or use --path or --git to \
@@ -131,11 +129,11 @@ pub fn execute(options: Options, config: &mut Config) -> Result<Option<()>> {
         SourceId::crates_io(config)?
     };
 
-    let krate = options.arg_crate.as_deref();
-    let prefix = options.flag_prefix.as_ref().map(|s| &s[..]);
-    let vers = options.flag_vers.as_ref().map(|s| &s[..]);
+    let krate = matches.value_of("crate");
+    let prefix = matches.value_of("prefix");
+    let vers = matches.value_of("vers");
 
-    cargo_clone::ops::clone(krate, &source_id, prefix, vers, config)?;
+    cargo_clone::clone(krate, &source_id, prefix, vers, config)?;
 
     Ok(None)
 }
