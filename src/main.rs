@@ -11,11 +11,11 @@ use cargo::util::{into_url::IntoUrl, Config};
 
 use docopt::Docopt;
 
-use failure::bail;
+use anyhow::bail;
 
 use serde::Deserialize;
 
-type Result<T> = std::result::Result<T, failure::Error>;
+type Result<T> = std::result::Result<T, anyhow::Error>;
 
 #[derive(Deserialize, Debug)]
 pub struct Options {
@@ -107,14 +107,18 @@ pub fn execute(options: Options, config: &mut Config) -> Result<Option<()>> {
         }
         None => 0,
     };
+
+    let flag_quiet = options.flag_quiet.unwrap_or(false);
+
     config.configure(
         verbose,
-        options.flag_quiet,
-        &options.flag_color,
+        flag_quiet,
+        options.flag_color.as_deref(),
         false,
         false,
         false,
         &None,
+        &[],
         &[],
     )?;
 
