@@ -9,6 +9,7 @@
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::process::Command;
 
 use anyhow::{bail, Context};
 
@@ -26,6 +27,7 @@ pub fn clone(
     krate: Option<&str>,
     srcid: &SourceId,
     prefix: Option<&str>,
+    git: bool,
     vers: Option<&str>,
     config: &Config,
 ) -> CargoResult<()> {
@@ -63,20 +65,30 @@ pub fn clone(
         }
     };
 
-    // Cloning into an existing directory is only allowed if the directory is empty.
     if !dest_path.exists() {
         fs::create_dir_all(&dest_path)?;
-    } else {
-        let is_empty = dest_path.read_dir()?.next().is_none();
-        if !is_empty {
-            bail!(
-                "destination path '{}' already exists and is not an empty directory.",
-                dest_path.display()
-            );
-        }
     }
 
-    clone_directory(pkg.root(), &dest_path)?;
+    // Cloning into an existing directory is only allowed if the directory is empty.
+    let is_empty = dest_path.read_dir()?.next().is_none();
+    if !is_empty {
+        bail!(
+            "destination path '{}' already exists and is not an empty directory.",
+            dest_path.display()
+        );
+    }
+
+    if git {
+        let repo = &pkg.manifest().metadata().repository;
+
+        if repo.is_none() {
+            bail!("Cannot clone from git repo because it is not specified in package's manifest.")
+        }
+
+        clone_git_repo(repo.as_ref().unwrap(), &dest_path)?;
+    } else {
+        clone_directory(pkg.root(), &dest_path)?;
+    }
 
     Ok(())
 }
@@ -167,6 +179,21 @@ fn clone_directory(from: &Path, to: &Path) -> CargoResult<()> {
     Ok(())
 }
 
+fn clone_git_repo(repo: &str, to: &Path) -> CargoResult<()> {
+    let status = Command::new("git")
+        .arg("clone")
+        .arg(repo)
+        .arg(to.to_str().unwrap())
+        .status()
+        .context("Failed to clone from git repo.")?;
+
+    if !status.success() {
+        bail!("Failed to clone from git repo.")
+    }
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -198,5 +225,16 @@ mod tests {
 
         assert!(to_path.join("Cargo.toml").exists());
         assert!(!to_path.join("cargo-ok").exists());
+    }
+
+    #[test]
+    fn test_clone_repo() {
+        let to = TempDir::new("cargo-clone-tests").unwrap();
+        let to_path = to.path();
+
+        clone_git_repo("https://github.com/janlikar/cargo-clone", to_path).unwrap();
+
+        assert!(to_path.exists());
+        assert!(to_path.join(".git").exists());
     }
 }
