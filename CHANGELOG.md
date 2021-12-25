@@ -1,3 +1,11 @@
+## [0.2.0] - 2021-12-25
+- Fix clone_directory.
+- Fix destination path creation.
+- --vers is now parsed as a version requirement and uses precise matching by default.
+- Dependencies updated
+
+Thank you @jsha and @pravic!
+
 ## [0.1.4] - 2020-01-28
 - Add flags for local and remote registries to clone from.
 - Update dependencies.

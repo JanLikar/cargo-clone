@@ -22,7 +22,6 @@ pub struct Options {
     flag_verbose: Option<bool>,
     flag_quiet: Option<bool>,
     flag_color: Option<String>,
-    flag_version: Option<bool>,
 
     flag_prefix: Option<String>,
 
