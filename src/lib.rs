@@ -16,7 +16,7 @@ pub mod ops {
     use cargo::core::dependency::Dependency;
     use cargo::core::source::{Source, SourceId};
     use cargo::core::Package;
-    use cargo::sources::{GitSource, PathSource, SourceConfigMap};
+    use cargo::sources::{PathSource, SourceConfigMap};
     use cargo::util::{CargoResult, Config};
 
     use semver::VersionReq;
@@ -39,14 +39,6 @@ pub mod ops {
             src.update()?;
 
             select_pkg(config, src, krate, vers, &mut |path| path.read_packages())?
-        } else if srcid.is_git() {
-            select_pkg(
-                config,
-                GitSource::new(*srcid, config)?,
-                krate,
-                vers,
-                &mut |git| git.read_packages(),
-            )?
         } else {
             select_pkg(
                 config,
@@ -56,7 +48,7 @@ pub mod ops {
                 &mut |_| {
                     bail!(
                         "must specify a crate to clone from \
-                         crates.io, or use --path or --git to \
+                         crates.io, or use --path to \
                          specify alternate source"
                     )
                 },
