@@ -1,5 +1,6 @@
 ## [1.0.0] - TBA
-- Remove option to download multiple crates to simplify the CLI
+- Remove option to download multiple crates to simplify the CLI.
+- Remove option to clone from git.
 
 ## [0.2.0] - 2021-12-25
 - Fix clone_directory.

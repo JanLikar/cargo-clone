@@ -6,7 +6,7 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use cargo::core::{GitReference, SourceId};
+use cargo::core::SourceId;
 use cargo::util::{into_url::IntoUrl, Config};
 
 use docopt::Docopt;
@@ -27,10 +27,6 @@ pub struct Options {
 
     arg_crate: Option<String>,
     flag_vers: Option<String>,
-    flag_git: Option<String>,
-    flag_branch: Option<String>,
-    flag_tag: Option<String>,
-    flag_rev: Option<String>,
 
     flag_path: Option<String>,
 
@@ -51,11 +47,6 @@ Options:
     --prefix DIR              Directory to clone the package into
 
     --vers VERS               Specify a version to clone from crates.io
-
-    --git URL                 Git URL to clone the specified crate from
-    --branch BRANCH           Branch to use when cloning from git
-    --tag TAG                 Tag to use when cloning from git
-    --rev SHA                 Specific commit to use when cloning from git
 
     --path PATH               Filesystem path to local crate to clone
 
@@ -121,19 +112,7 @@ pub fn execute(options: Options, config: &mut Config) -> Result<Option<()>> {
         &[],
     )?;
 
-    let source_id = if let Some(url) = options.flag_git {
-        let url = url.into_url()?;
-        let gitref = if let Some(rev) = options.flag_rev {
-            GitReference::Rev(rev)
-        } else if let Some(tag) = options.flag_tag {
-            GitReference::Tag(tag)
-        } else if let Some(branch) = options.flag_branch {
-            GitReference::Branch(branch)
-        } else {
-            GitReference::Branch("master".to_string())
-        };
-        SourceId::for_git(&url, gitref)?
-    } else if let Some(path) = options.flag_path {
+    let source_id = if let Some(path) = options.flag_path {
         SourceId::for_path(&config.cwd().join(path))?
     } else if let Some(registry) = options.flag_alt_registry.as_ref() {
         SourceId::alt_registry(config, registry)?

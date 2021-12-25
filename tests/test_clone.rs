@@ -3,7 +3,6 @@ use cargo::util::Config;
 
 use tempdir::TempDir;
 
-
 #[test]
 fn test_from_registry() {
     let temp_dir = TempDir::new("cargo-clone-tests").unwrap();
