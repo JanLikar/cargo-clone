@@ -1,7 +1,16 @@
 ## [1.0.0] - TBA
-- Remove option to download multiple crates to simplify the CLI.
-- Remove option to clone from git.
-- Use Clap.rs instead of Docopt.
+### Added
+- Can now clone a package from a git repository specified in package's Cargo.toml file using `--git`.
+- Test coverage was improved significantly.
+
+### Removed
+- Removed option to download multiple crates to simplify the CLI.
+- Removed option to clone from git repo directly. This was deemed out-of-scope.
+- Removed dependency on Serde.
+
+### Changed
+- clap.rs is used instead of Docopt.
+- Several other minimal CLI changes.
 
 
 ## [0.2.0] - 2021-12-25

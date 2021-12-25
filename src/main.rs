@@ -74,6 +74,11 @@ fn main() {
                 .value_name("PATH")
                 .help("A local registry path to clone the specified crate from."),
         )
+        .arg(
+            Arg::with_name("git")
+                .long("git")
+                .help("Clone from repository specified in package's metadata."),
+        )
         .arg(Arg::with_name("crate").help("The name of the crate to be downloaded."));
 
     let matches = app.get_matches();
@@ -132,8 +137,9 @@ pub fn execute(matches: clap::ArgMatches, config: &mut Config) -> Result<Option<
     let krate = matches.value_of("crate");
     let prefix = matches.value_of("prefix");
     let vers = matches.value_of("vers");
+    let git = matches.is_present("git");
 
-    cargo_clone::clone(krate, &source_id, prefix, vers, config)?;
+    cargo_clone::clone(krate, &source_id, prefix, git, vers, config)?;
 
     Ok(None)
 }

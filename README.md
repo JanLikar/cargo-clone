@@ -15,8 +15,14 @@ It can be installed using the install subcommand
 
 and can be used like this:
 
-    cargo clone [options] [<crate>]...
+    cargo clone [options] [<crate>]
 
 For example, to download version 0.2.0 of cargo-clone's source from crates.io, you would run
 
     cargo clone --vers 0.2.0 cargo-clone
+
+To checkout a git repo specified in the package's Cargo.toml, you can use the `--git` flag.
+Git must be installed for this to work.
+
+    cargo clone cargo-clone --git
+
