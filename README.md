@@ -5,11 +5,9 @@
      \___\__,_|_|  \__, |\___/       \___|_|\___/|_| |_|\___|
                    |___/                                     
 
-cargo-clone is a
-[Cargo subcommand](https://github.com/rust-lang/cargo/wiki/Third-party-cargo-subcommands)
-which will eventually be bundled with Cargo.
-
 cargo-clone can be used to fetch the source code of a Rust crate.
+
+cargo-clone is a [Cargo subcommand](https://github.com/rust-lang/cargo/wiki/Third-party-cargo-subcommands).
 
 It can be installed using the install subcommand
 
@@ -18,3 +16,7 @@ It can be installed using the install subcommand
 and can be used like this:
 
     cargo clone [options] [<crate>]...
+
+For example, to download version 0.2.0 of cargo-clone's source from crates.io, you would run
+
+    cargo clone --vers 0.2.0 cargo-clone
