@@ -1,3 +1,6 @@
+## [1.0.0] - TBA
+- Remove option to download multiple crates to simplify the CLI
+
 ## [0.2.0] - 2021-12-25
 - Fix clone_directory.
 - Fix destination path creation.

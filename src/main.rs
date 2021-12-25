@@ -25,7 +25,7 @@ pub struct Options {
 
     flag_prefix: Option<String>,
 
-    arg_crate: Vec<String>,
+    arg_crate: Option<String>,
     flag_vers: Option<String>,
     flag_git: Option<String>,
     flag_branch: Option<String>,
@@ -45,7 +45,7 @@ pub const USAGE: &str = "
 Clone source code of a Rust crate
 
 Usage:
-    cargo clone [options] [<crate>]...
+    cargo clone [options] [<crate>]
 
 Options:
     --prefix DIR              Directory to clone the package into
@@ -142,7 +142,7 @@ pub fn execute(options: Options, config: &mut Config) -> Result<Option<()>> {
         SourceId::for_registry(&url)?
     } else if let Some(path) = options.flag_local_registry.as_ref() {
         SourceId::for_local_registry(&config.cwd().join(path))?
-    } else if options.arg_crate.is_empty() {
+    } else if options.arg_crate.is_none() {
         bail!(
             "must specify a crate to clone from \
              crates.io, or use --path or --git to \
@@ -152,14 +152,11 @@ pub fn execute(options: Options, config: &mut Config) -> Result<Option<()>> {
         SourceId::crates_io(config)?
     };
 
+    let krate = options.arg_crate.as_deref();
     let prefix = options.flag_prefix.as_ref().map(|s| &s[..]);
     let vers = options.flag_vers.as_ref().map(|s| &s[..]);
-    if !options.arg_crate.is_empty() {
-        for item in options.arg_crate.iter() {
-            cargo_clone::ops::clone(Some(&item[..]), &source_id, prefix, vers, config)?;
-        }
-    } else {
-        cargo_clone::ops::clone(None, &source_id, prefix, vers, config)?;
-    }
+
+    cargo_clone::ops::clone(krate, &source_id, prefix, vers, config)?;
+
     Ok(None)
 }

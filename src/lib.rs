@@ -11,7 +11,7 @@ pub mod ops {
     use std::fs;
     use std::path::{Path, PathBuf};
 
-    use anyhow::{Context, bail};
+    use anyhow::{bail, Context};
 
     use cargo::core::dependency::Dependency;
     use cargo::core::source::{Source, SourceId};
@@ -86,7 +86,7 @@ pub mod ops {
             }
         }
 
-        clone_directory(&pkg.root(), &dest_path)?;
+        clone_directory(pkg.root(), &dest_path)?;
 
         Ok(())
     }
@@ -143,10 +143,10 @@ pub mod ops {
         let is_req = "<>=^~".contains(first.unwrap()) || version.contains('*');
 
         if is_req {
-            let vers = VersionReq::parse(version).with_context(|| format!("Invalid version requirement: `{}`.", version))?;
+            let vers = VersionReq::parse(version)
+                .with_context(|| format!("Invalid version requirement: `{}`.", version))?;
             Ok(vers.to_string())
-        }
-        else {
+        } else {
             Ok(format!("={}", version))
         }
     }
@@ -168,7 +168,7 @@ pub mod ops {
                 fs::copy(&entry.path(), &dest_path)?;
             } else if file_type.is_dir() {
                 if dest_path == to {
-                    continue
+                    continue;
                 }
                 fs::create_dir(&dest_path)?;
             }
@@ -190,7 +190,10 @@ pub mod ops {
 
         #[test]
         fn test_parse_version_req_invalid_req() {
-            assert_eq!("Invalid version requirement: `=foo`.", parse_version_req("=foo").unwrap_err().to_string());
+            assert_eq!(
+                "Invalid version requirement: `=foo`.",
+                parse_version_req("=foo").unwrap_err().to_string()
+            );
         }
     }
 }
