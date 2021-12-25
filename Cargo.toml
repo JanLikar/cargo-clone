@@ -9,15 +9,14 @@ name = "cargo-clone"
 readme = "README.md"
 repository = "https://github.com/JanLikar/cargo-clone"
 version = "0.2.0"
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 anyhow = "1.0.52"
 cargo = "0.58.0"
-docopt = "1.0.0"
+clap = "2.34.0"
 semver = "1.0.4"
-serde = { version = "1.0.80", features = ["derive"] }
-walkdir = "1"
+walkdir = "2.3.2"
 
 [dev-dependencies]
 tempdir = "0.3.5"
