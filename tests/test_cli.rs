@@ -22,7 +22,7 @@ fn test_cli() {
 }
 
 #[test]
-fn test_custon_index() {
+fn test_custom_index() {
     let temp_dir = TempDir::new("cargo-clone-tests").unwrap();
     let output_path = temp_dir.path().join("cargo-clone");
 
@@ -59,16 +59,14 @@ fn test_clone_into_existing() {
 
 #[test]
 
-fn test_version() {
+fn test_with_version() {
     let temp_dir = TempDir::new("cargo-clone-tests").unwrap();
     let output_path = temp_dir.path().join("cargo-clone");
 
     assert!(!output_path.exists());
 
     let status = Command::new("target/debug/cargo-clone")
-        .arg("--vers")
-        .arg("6.1.2")
-        .arg("tokei")
+        .arg("tokei@6.1.2")
         .arg(output_path.to_str().unwrap())
         .status()
         .unwrap();
