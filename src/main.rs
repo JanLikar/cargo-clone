@@ -125,7 +125,9 @@ pub fn execute(matches: clap::ArgMatches, config: &mut Config) -> Result<Option<
     let vers = matches.value_of("vers");
     let git = matches.is_present("git");
 
-    cargo_clone::clone(krate, &source_id, directory, git, vers, config)?;
+    let opts = cargo_clone::CloneOpts::new(krate, &source_id, directory, git, vers);
+
+    cargo_clone::clone(&opts, config)?;
 
     Ok(None)
 }

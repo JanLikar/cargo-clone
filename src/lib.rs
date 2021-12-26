@@ -23,40 +23,40 @@ use semver::VersionReq;
 
 use walkdir::WalkDir;
 
-pub fn clone(
-    krate: Option<&str>,
-    srcid: &SourceId,
-    directory: Option<&str>,
+pub struct CloneOpts<'a> {
+    krate: Option<&'a str>,
+    srcid: &'a SourceId,
+    directory: Option<&'a str>,
     git: bool,
-    vers: Option<&str>,
-    config: &Config,
-) -> CargoResult<()> {
+    vers: Option<&'a str>,
+}
+
+impl<'a> CloneOpts<'a> {
+    pub fn new(
+        krate: Option<&'a str>,
+        srcid: &'a SourceId,
+        directory: Option<&'a str>,
+        git: bool,
+        vers: Option<&'a str>,
+
+    ) -> CloneOpts<'a> {
+        CloneOpts {
+            krate,
+            srcid,
+            directory,
+            git,
+            vers,
+        }
+    }
+}
+
+pub fn clone(opts: &CloneOpts, config: &Config) -> CargoResult<()> {
     let _lock = config.acquire_package_cache_lock()?;
 
-    let map = SourceConfigMap::new(config)?;
-    let pkg = if srcid.is_path() {
-        let path = srcid.url().to_file_path().expect("path must be valid");
-        let src = PathSource::new(&path, *srcid, config);
-
-        select_pkg(config, src, krate, vers, &mut |path| path.read_packages())?
-    } else {
-        select_pkg(
-            config,
-            map.load(*srcid, &Default::default())?,
-            krate,
-            vers,
-            &mut |_| {
-                bail!(
-                    "must specify a crate to clone from \
-                        crates.io, or use --path to \
-                        specify alternate source"
-                )
-            },
-        )?
-    };
+    let pkg = get_package(opts, config)?;
 
     // If prefix was not supplied, clone into current dir
-    let dest_path = match directory {
+    let dest_path = match opts.directory {
         Some(path) => PathBuf::from(path),
         None => {
             let mut dest = env::current_dir()?;
@@ -78,7 +78,7 @@ pub fn clone(
         );
     }
 
-    if git {
+    if opts.git {
         let repo = &pkg.manifest().metadata().repository;
 
         if repo.is_none() {
@@ -91,6 +91,30 @@ pub fn clone(
     }
 
     Ok(())
+}
+
+fn get_package(opts: &CloneOpts, config: &Config) -> CargoResult<Package> {
+    if opts.srcid.is_path() {
+        let path = opts.srcid.url().to_file_path().expect("path must be valid");
+        let src = PathSource::new(&path, *opts.srcid, config);
+
+        select_pkg(config, src, opts.krate, opts.vers, &mut |path| path.read_packages())
+    } else {
+        let map = SourceConfigMap::new(config)?;
+        select_pkg(
+            config,
+            map.load(*opts.srcid, &Default::default())?,
+            opts.krate,
+            opts.vers,
+            &mut |_| {
+                bail!(
+                    "must specify a crate to clone from \
+                        crates.io, or use --path to \
+                        specify alternate source"
+                )
+            },
+        )
+    }
 }
 
 fn select_pkg<'a, T>(
@@ -165,7 +189,11 @@ fn clone_directory(from: &Path, to: &Path) -> CargoResult<()> {
         let mut dest_path = to.to_owned();
         dest_path.push(entry.path().strip_prefix(from).unwrap());
 
-        if file_type.is_file() && entry.file_name() != ".cargo-ok" {
+        if entry.file_name() == ".cargo-ok" {
+            continue
+        }
+
+        if file_type.is_file() {
             // .cargo-ok is not wanted in this context
             fs::copy(&entry.path(), &dest_path)?;
         } else if file_type.is_dir() {
