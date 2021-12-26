@@ -16,9 +16,14 @@ type Result<T> = std::result::Result<T, anyhow::Error>;
 fn main() {
     let version = version();
 
-    let app = clap::App::new("cargo-clone")
+    let app = clap::App::new("cargo clone")
         .bin_name("cargo clone")
         .version(&*version)
+        // A hack to make calling cargo-clone directly work.
+        .arg(Arg::with_name("dummy")
+            .hidden(true)
+            .required(true)
+            .possible_value("clone"))
         .arg(
             Arg::with_name("color")
                 .long("color")
