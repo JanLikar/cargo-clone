@@ -35,3 +35,8 @@ The output dir can be specified as the last argument:
 To checkout a git repo specified in the package's Cargo.toml, you can use the `--git` flag:
 
     cargo clone --git cargo-clone
+
+
+## Contributing
+
+When running locally, you can run using `cargo run -- clone CRATE` or `cargo-clone clone CRATE`.

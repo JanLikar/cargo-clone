@@ -11,6 +11,7 @@ fn test_cli() {
     assert!(!output_path.exists());
 
     let status = Command::new("target/debug/cargo-clone")
+        .arg("clone")
         .arg("cargo-clone")
         .arg("--")
         .arg(output_path.to_str().unwrap())
@@ -30,6 +31,7 @@ fn test_custom_index() {
     assert!(!output_path.exists());
 
     let status = Command::new("target/debug/cargo-clone")
+        .arg("clone")
         .arg("--index")
         .arg("https://github.com/rust-lang/crates.io-index")
         .arg("cargo-clone")
@@ -49,6 +51,7 @@ fn test_clone_into_existing() {
     let output_path = temp_dir.path();
 
     let status = Command::new("target/debug/cargo-clone")
+        .arg("clone")
         .arg("time")
         .arg("--")
         .arg(output_path.to_str().unwrap())
@@ -69,6 +72,7 @@ fn test_with_version() {
     assert!(!output_path.exists());
 
     let status = Command::new("target/debug/cargo-clone")
+        .arg("clone")
         .arg("tokei@6.1.2")
         .arg("--")
         .arg(output_path.to_str().unwrap())
