@@ -1,13 +1,7 @@
-## [1.0.0] - TBA
+## [1.0.0] - 2021-12-27
 ### Added
 - Can now clone a package from a git repository specified in package's Cargo.toml file using `--git`.
 - Test coverage was improved significantly.
-
-### Removed
-- Removed option to download multiple crates to simplify the CLI.
-- Removed option to clone from git repo directly. This was deemed out-of-scope.
-- Removed dependency on Serde.
-- Removed `--path` as it is unneeded.
 
 ### Changed
 - clap.rs is used instead of Docopt.
@@ -17,6 +11,10 @@
 - `--vers` is removed in favor of inline version specs: `cargo-clone@1.0.0`.
 - Several other minimal CLI changes.
 
+### Removed
+- Removed option to clone from git repo directly. This was deemed out-of-scope.
+- Removed dependency on Serde.
+- Removed `--path` as it is unneeded.
 
 ## [0.2.0] - 2021-12-25
 - Fix clone_directory.
