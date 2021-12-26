@@ -15,10 +15,12 @@ fn test_from_registry() {
     let krate = Some("cargo-clone");
     let source_id = SourceId::crates_io(&config).unwrap();
     let git = false;
-    let prefix = Some(output_path.to_str().unwrap());
+    let directory = Some(output_path.to_str().unwrap());
     let vers = Some("0.2.0");
 
-    cargo_clone::clone(krate, &source_id, prefix, git, vers, &config).unwrap();
+    let opts = cargo_clone::CloneOpts::new(krate, &source_id, directory, git, vers);
+
+    cargo_clone::clone(&opts, &config).unwrap();
 
     assert!(output_path.exists());
     assert!(output_path.join("Cargo.toml").exists());
