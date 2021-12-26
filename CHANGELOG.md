@@ -14,6 +14,7 @@
 - `--prefix` is now a positional argument named `directory`.
 - `--alt-registry` is now `--registry`.
 - `--registry-url` is now `--index`.
+- `--vers` is removed in favor of inline version specs: `cargo-clone@1.0.0`.
 - Several other minimal CLI changes.
 
 

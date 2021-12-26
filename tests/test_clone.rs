@@ -12,7 +12,7 @@ fn test_from_registry() {
 
     let config = Config::default().unwrap();
 
-    let krate = Some("cargo-clone");
+    let krate = "cargo-clone";
     let source_id = SourceId::crates_io(&config).unwrap();
     let git = false;
     let directory = Some(output_path.to_str().unwrap());

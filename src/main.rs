@@ -20,12 +20,6 @@ fn main() {
         .bin_name("cargo clone")
         .version(&*version)
         .arg(
-            Arg::with_name("vers")
-                .long("vers")
-                .value_name("VERSION")
-                .help("Specify crate version."),
-        )
-        .arg(
             Arg::with_name("color")
                 .long("color")
                 .value_name("COLORING")
@@ -120,12 +114,11 @@ pub fn execute(matches: clap::ArgMatches, config: &mut Config) -> Result<Option<
         SourceId::crates_io(config)?
     };
 
-    let krate = matches.value_of("crate");
+    let (krate, vers) = cargo_clone::parse_name_and_version(matches.value_of("crate").unwrap())?;
     let directory = matches.value_of("directory");
-    let vers = matches.value_of("vers");
     let git = matches.is_present("git");
 
-    let opts = cargo_clone::CloneOpts::new(krate, &source_id, directory, git, vers);
+    let opts = cargo_clone::CloneOpts::new(&krate, &source_id, directory, git, vers.as_deref());
 
     cargo_clone::clone(&opts, config)?;
 

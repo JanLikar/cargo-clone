@@ -24,7 +24,7 @@ use semver::VersionReq;
 use walkdir::WalkDir;
 
 pub struct CloneOpts<'a> {
-    krate: Option<&'a str>,
+    krate: &'a str,
     srcid: &'a SourceId,
     directory: Option<&'a str>,
     git: bool,
@@ -33,12 +33,11 @@ pub struct CloneOpts<'a> {
 
 impl<'a> CloneOpts<'a> {
     pub fn new(
-        krate: Option<&'a str>,
+        krate: &'a str,
         srcid: &'a SourceId,
         directory: Option<&'a str>,
         git: bool,
         vers: Option<&'a str>,
-
     ) -> CloneOpts<'a> {
         CloneOpts {
             krate,
@@ -50,6 +49,7 @@ impl<'a> CloneOpts<'a> {
     }
 }
 
+/// Clone the specified crate from registry or git repository.
 pub fn clone(opts: &CloneOpts, config: &Config) -> CargoResult<()> {
     let _lock = config.acquire_package_cache_lock()?;
 
@@ -98,7 +98,7 @@ fn get_package(opts: &CloneOpts, config: &Config) -> CargoResult<Package> {
         let path = opts.srcid.url().to_file_path().expect("path must be valid");
         let src = PathSource::new(&path, *opts.srcid, config);
 
-        select_pkg(config, src, opts.krate, opts.vers, &mut |path| path.read_packages())
+        select_pkg(config, src, opts.krate, opts.vers)
     } else {
         let map = SourceConfigMap::new(config)?;
         select_pkg(
@@ -106,13 +106,6 @@ fn get_package(opts: &CloneOpts, config: &Config) -> CargoResult<Package> {
             map.load(*opts.srcid, &Default::default())?,
             opts.krate,
             opts.vers,
-            &mut |_| {
-                bail!(
-                    "must specify a crate to clone from \
-                        crates.io, or use --path to \
-                        specify alternate source"
-                )
-            },
         )
     }
 }
@@ -120,40 +113,29 @@ fn get_package(opts: &CloneOpts, config: &Config) -> CargoResult<Package> {
 fn select_pkg<'a, T>(
     config: &Config,
     mut src: T,
-    name: Option<&str>,
+    name: &str,
     vers: Option<&str>,
-    list_all: &mut dyn FnMut(&mut T) -> CargoResult<Vec<Package>>,
 ) -> CargoResult<Package>
 where
     T: Source + 'a,
 {
     src.update()?;
 
-    match name {
-        Some(name) => {
-            let vers = match vers {
-                Some(v) => Some(parse_version_req(v)?),
-                None => None,
-            };
+    let dep = Dependency::parse(name, vers, src.source_id())?;
+    let mut summaries = vec![];
+    src.query(&dep, &mut |summary| summaries.push(summary))?;
 
-            let dep = Dependency::parse(name, vers.as_deref(), src.source_id())?;
-            let mut summaries = vec![];
-            src.query(&dep, &mut |summary| summaries.push(summary))?;
+    let latest = summaries.iter().max_by_key(|s| s.version());
 
-            let latest = summaries.iter().max_by_key(|s| s.version());
-
-            match latest {
-                Some(l) => {
-                    let pkg = Box::new(src).download_now(l.package_id(), config)?;
-                    Ok(pkg)
-                }
-                None => bail!("package '{}' not found", name),
-            }
+    match latest {
+        Some(l) => {
+            config
+                .shell()
+                .note(format!("Downloading {} {}", name, l.version()))?;
+            let pkg = Box::new(src).download_now(l.package_id(), config)?;
+            Ok(pkg)
         }
-        None => {
-            let candidates = list_all(&mut src)?;
-            Ok(candidates[0].clone())
-        }
+        None => bail!("Package `{}@{}` not found", name, vers.unwrap_or("*.*.*")),
     }
 }
 
@@ -163,7 +145,7 @@ fn parse_version_req(version: &str) -> CargoResult<String> {
     let first = version.chars().next();
 
     if first.is_none() {
-        bail!("No version provided for the `--vers` flag")
+        bail!("Version cannot be empty.")
     };
 
     let is_req = "<>=^~".contains(first.unwrap()) || version.contains('*');
@@ -190,7 +172,7 @@ fn clone_directory(from: &Path, to: &Path) -> CargoResult<()> {
         dest_path.push(entry.path().strip_prefix(from).unwrap());
 
         if entry.file_name() == ".cargo-ok" {
-            continue
+            continue;
         }
 
         if file_type.is_file() {
@@ -220,6 +202,23 @@ fn clone_git_repo(repo: &str, to: &Path) -> CargoResult<()> {
     }
 
     Ok(())
+}
+
+/// Parses crate specifications like: crate, crate@x.y.z, crate@~23.4.5.
+pub fn parse_name_and_version(spec: &str) -> CargoResult<(String, Option<String>)> {
+    if !spec.contains('@') {
+        return Ok((spec.to_owned(), None));
+    }
+
+    let mut parts = spec.split('@');
+    let crate_ = parts
+        .next()
+        .context(format!("Crate name missing in `{}`.", spec))?;
+    let version = parts
+        .next()
+        .context(format!("Crate version missing in `{}`.", spec))?;
+
+    Ok((crate_.to_owned(), Some(parse_version_req(version)?)))
 }
 
 #[cfg(test)]
@@ -264,5 +263,25 @@ mod tests {
 
         assert!(to_path.exists());
         assert!(to_path.join(".git").exists());
+    }
+
+    #[test]
+    fn test_parse_name_and_version() {
+        assert_eq!(
+            parse_name_and_version("foo").unwrap(),
+            (String::from("foo"), None)
+        );
+        assert_eq!(
+            parse_name_and_version("foo@1.1.3").unwrap(),
+            (String::from("foo"), Some(String::from("=1.1.3")))
+        );
+        assert_eq!(
+            parse_name_and_version("foo@~1.1.3").unwrap(),
+            (String::from("foo"), Some(String::from("~1.1.3")))
+        );
+        assert_eq!(
+            parse_name_and_version("foo@1.1.*").unwrap(),
+            (String::from("foo"), Some(String::from("1.1.*")))
+        );
     }
 }
