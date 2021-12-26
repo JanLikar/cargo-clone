@@ -1,42 +1,64 @@
-                                          _                  
-      ___ __ _ _ __ __ _  ___         ___| | ___  _ __   ___ 
-     / __/ _` | '__/ _` |/ _ \ _____ / __| |/ _ \| '_ \ / _ \
-    | (_| (_| | | | (_| | (_) |_____| (__| | (_) | | | |  __/
-     \___\__,_|_|  \__, |\___/       \___|_|\___/|_| |_|\___|
-                   |___/                                     
+# cargo-clone
 
-cargo-clone can be used to fetch the source code of a Rust crate.
-
+cargo-clone can be used to fetch the source code of a Rust crate from a registry.
 
     cargo clone [FLAGS] [OPTIONS] <crate>... [-- <directory>]
 
 cargo-clone is a [Cargo subcommand](https://github.com/rust-lang/cargo/wiki/Third-party-cargo-subcommands).
 
-It can be installed using the install subcommand
+# Installation & upgrading
 
     cargo install cargo-clone
 
-and can be used like this:
+## Usage
 
-    cargo clone [options] [<crate>]
+    cargo clone [FLAGS] [OPTIONS] <crate>... [-- <directory>]
 
-For example, to download version 1.0.0 of cargo-clone's source from crates.io, you would run
+To download cargo-clone's code you would use
+
+    cargo clone cargo-clone
+
+
+### Specifying versions
+The latest available version is downloaded by default.
+If specific versions are desired, semver specifiers can be appended to crate names. 
+
 
     cargo clone cargo-clone@1.0.0
 
-Downloading multiple packages is also supported:
+Versions are matched exactly by default, but other kinds of matching are also allowed.
 
-    cargo clone cargo-clone@1.0.0 serde time
+    cargo clone cargo-clone@~1.0.0
+
+
+### Cloning from git repositories
+Using the `--git` flag runs `git clone` on each git repository url extracted from crate's metadata.
+
+These lines are roughly equivalent:
+
+    cargo clone --git cargo-clone
+    git clone https://github.com/janlikar/cargo-clone
+
+The command fails if a crate does not have the repository field set to a valid git repository.
+
+
+### Output directory
+Crates are downloaded into `$PWD/$CRATE_NAME` by default.
 
 The output dir can be specified as the last argument:
 
-    cargo clone serde time -- packages/
+    cargo clone cargo-clone -- foo  # Downloads into $PWD/foo
 
-To checkout a git repo specified in the package's Cargo.toml, you can use the `--git` flag:
+If multiple packages are downloaded at the same time or if the directory contains a trailing slash,
+the packages will be downloaded into subdirectories of the path provided.
 
-    cargo clone --git cargo-clone
+    cargo clone cargo-clone -- pkgs/  # Creates pkgs/cargo-clone/
+    cargo clone cargo serde -- pkgs2/  # Creates pkgs/cargo and pkgs/serde
 
 
 ## Contributing
+Contributions are welcome. Feel free to open a PR into develop branch.
 
 When running locally, you can run using `cargo run -- clone CRATE` or `cargo-clone clone CRATE`.
+
+By opening a PR you agree to license your code under Apache/MIT licenses.

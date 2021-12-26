@@ -28,7 +28,7 @@ fn main() {
             Arg::with_name("color")
                 .long("color")
                 .value_name("COLORING")
-                .help("Coloring: auto, always, never")
+                .help("Coloring: auto, always, never.")
                 .takes_value(true),
         )
         .arg(
