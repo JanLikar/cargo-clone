@@ -6,8 +6,6 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use anyhow::bail;
-
 use cargo::core::SourceId;
 use cargo::util::{into_url::IntoUrl, Config};
 
@@ -45,41 +43,38 @@ fn main() {
                 .help("Print less output to stdout."),
         )
         .arg(
-            Arg::with_name("prefix")
-                .long("prefix")
-                .value_name("PREFIX")
-                .help("Install under a different prefix."),
-        )
-        .arg(
-            Arg::with_name("path")
-                .long("path")
-                .value_name("PATH")
-                .help("Filesystem path to local crate to clone."),
-        )
-        .arg(
-            Arg::with_name("alt-registry")
-                .long("alt-registry")
+            Arg::with_name("registry")
+                .long("registry")
                 .value_name("REGISTRY")
-                .help("A registry name from Cargo config to clone the specified crate from."),
+                .help("A registry name from Cargo config to clone the specified crate from.")
+                .conflicts_with("index"),
         )
         .arg(
-            Arg::with_name("registry-url")
-                .long("registry-url")
+            Arg::with_name("index")
+                .long("index")
                 .value_name("URL")
-                .help(" A registry url to clone the specified crate from."),
+                .help("Registry index to install from.")
+                .conflicts_with("registry"),
         )
         .arg(
             Arg::with_name("local-registry")
                 .long("local-registry")
                 .value_name("PATH")
-                .help("A local registry path to clone the specified crate from."),
+                .help("A local registry path to clone the specified crate from.")
+                .conflicts_with("registry")
+                .conflicts_with("index"),
         )
         .arg(
             Arg::with_name("git")
                 .long("git")
                 .help("Clone from repository specified in package's metadata."),
         )
-        .arg(Arg::with_name("crate").help("The name of the crate to be downloaded."));
+        .arg(
+            Arg::with_name("crate")
+                .help("The name of the crate to be downloaded.")
+                .required(true),
+        )
+        .arg(Arg::with_name("directory").help("The destination directory."));
 
     let matches = app.get_matches();
     let mut config = Config::default().expect("Unable to get config.");
@@ -115,31 +110,22 @@ pub fn execute(matches: clap::ArgMatches, config: &mut Config) -> Result<Option<
         &[],
     )?;
 
-    let source_id = if let Some(path) = matches.value_of("path") {
-        SourceId::for_path(&config.cwd().join(path))?
-    } else if let Some(registry) = matches.value_of("registry-name") {
+    let source_id = if let Some(registry) = matches.value_of("registry") {
         SourceId::alt_registry(config, registry)?
-    } else if let Some(url) = matches.value_of("registry-url") {
-        let url = url.into_url()?;
-        SourceId::for_registry(&url)?
+    } else if let Some(index) = matches.value_of("index") {
+        SourceId::for_registry(&index.into_url()?)?
     } else if let Some(path) = matches.value_of("local-registry") {
         SourceId::for_local_registry(&config.cwd().join(path))?
-    } else if matches.value_of("crate").is_none() {
-        bail!(
-            "must specify a crate to clone from \
-             crates.io, or use --path or --git to \
-             specify alternate source"
-        );
     } else {
         SourceId::crates_io(config)?
     };
 
     let krate = matches.value_of("crate");
-    let prefix = matches.value_of("prefix");
+    let directory = matches.value_of("directory");
     let vers = matches.value_of("vers");
     let git = matches.is_present("git");
 
-    cargo_clone::clone(krate, &source_id, prefix, git, vers, config)?;
+    cargo_clone::clone(krate, &source_id, directory, git, vers, config)?;
 
     Ok(None)
 }
