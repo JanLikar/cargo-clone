@@ -23,28 +23,37 @@ use semver::VersionReq;
 
 use walkdir::WalkDir;
 
+#[derive(PartialEq, Eq, Debug)]
+pub struct Crate {
+    name: String,
+    version: Option<String>,
+}
+
+impl Crate {
+    pub fn new(name: String, version: Option<String>) -> Crate {
+        Crate { name, version }
+    }
+}
+
 pub struct CloneOpts<'a> {
-    krate: &'a str,
+    crates: &'a [Crate],
     srcid: &'a SourceId,
     directory: Option<&'a str>,
     git: bool,
-    vers: Option<&'a str>,
 }
 
 impl<'a> CloneOpts<'a> {
     pub fn new(
-        krate: &'a str,
+        crates: &'a [Crate],
         srcid: &'a SourceId,
         directory: Option<&'a str>,
         git: bool,
-        vers: Option<&'a str>,
     ) -> CloneOpts<'a> {
         CloneOpts {
-            krate,
+            crates,
             srcid,
             directory,
             git,
-            vers,
         }
     }
 }
@@ -53,59 +62,85 @@ impl<'a> CloneOpts<'a> {
 pub fn clone(opts: &CloneOpts, config: &Config) -> CargoResult<()> {
     let _lock = config.acquire_package_cache_lock()?;
 
-    let pkg = get_package(opts, config)?;
+    let multiple_crates = opts.crates.len() > 1;
+    let can_clone_in_dir = opts.directory.map(|d| d.ends_with('/')).unwrap_or(true);
+    let should_append_crate_dir = multiple_crates || can_clone_in_dir;
 
-    // If prefix was not supplied, clone into current dir
-    let dest_path = match opts.directory {
-        Some(path) => PathBuf::from(path),
-        None => {
-            let mut dest = env::current_dir()?;
-            dest.push(format!("{}", pkg.name()));
-            dest
-        }
-    };
+    // If prefix was not supplied, use current dir.
+    let dir_path = opts
+        .directory
+        .map(PathBuf::from)
+        .unwrap_or(env::current_dir()?);
 
-    if !dest_path.exists() {
-        fs::create_dir_all(&dest_path)?;
-    }
+    for crate_ in opts.crates {
+        let mut dest_path = dir_path.clone();
 
-    // Cloning into an existing directory is only allowed if the directory is empty.
-    let is_empty = dest_path.read_dir()?.next().is_none();
-    if !is_empty {
-        bail!(
-            "destination path '{}' already exists and is not an empty directory.",
-            dest_path.display()
-        );
-    }
-
-    if opts.git {
-        let repo = &pkg.manifest().metadata().repository;
-
-        if repo.is_none() {
-            bail!("Cannot clone from git repo because it is not specified in package's manifest.")
+        if should_append_crate_dir {
+            dest_path.push(&crate_.name);
         }
 
-        clone_git_repo(repo.as_ref().unwrap(), &dest_path)?;
-    } else {
-        clone_directory(pkg.root(), &dest_path)?;
+        if !dest_path.exists() {
+            fs::create_dir_all(&dest_path)?;
+        }
+
+        config
+            .shell()
+            .verbose(|s| s.note(format!("Cloning into {:?}", &dir_path)))?;
+
+        // Cloning into an existing directory is only allowed if the directory is empty.
+        let is_empty = dest_path.read_dir()?.next().is_none();
+        if !is_empty {
+            bail!(
+                "destination path '{}' already exists and is not an empty directory.",
+                dest_path.display()
+            );
+        }
+
+        clone_single(crate_, &dest_path, opts, config)?;
     }
 
     Ok(())
 }
 
-fn get_package(opts: &CloneOpts, config: &Config) -> CargoResult<Package> {
+pub fn clone_single(
+    crate_: &Crate,
+    dest_path: &Path,
+    opts: &CloneOpts,
+    config: &Config,
+) -> CargoResult<()> {
+    let pkg = get_package(crate_, opts, config)?;
+
+    if opts.git {
+        let repo = &pkg.manifest().metadata().repository;
+
+        if repo.is_none() {
+            bail!(
+                "Cannot clone {} from git repo because it is not specified in package's manifest.",
+                &crate_.name
+            )
+        }
+
+        clone_git_repo(repo.as_ref().unwrap(), dest_path)?;
+    } else {
+        clone_directory(pkg.root(), dest_path)?;
+    }
+
+    Ok(())
+}
+
+fn get_package(crate_: &Crate, opts: &CloneOpts, config: &Config) -> CargoResult<Package> {
     if opts.srcid.is_path() {
         let path = opts.srcid.url().to_file_path().expect("path must be valid");
         let src = PathSource::new(&path, *opts.srcid, config);
 
-        select_pkg(config, src, opts.krate, opts.vers)
+        select_pkg(config, src, &crate_.name, crate_.version.as_deref())
     } else {
         let map = SourceConfigMap::new(config)?;
         select_pkg(
             config,
             map.load(*opts.srcid, &Default::default())?,
-            opts.krate,
-            opts.vers,
+            &crate_.name,
+            crate_.version.as_deref(),
         )
     }
 }
@@ -205,9 +240,9 @@ fn clone_git_repo(repo: &str, to: &Path) -> CargoResult<()> {
 }
 
 /// Parses crate specifications like: crate, crate@x.y.z, crate@~23.4.5.
-pub fn parse_name_and_version(spec: &str) -> CargoResult<(String, Option<String>)> {
+pub fn parse_name_and_version(spec: &str) -> CargoResult<Crate> {
     if !spec.contains('@') {
-        return Ok((spec.to_owned(), None));
+        return Ok(Crate::new(spec.to_owned(), None));
     }
 
     let mut parts = spec.split('@');
@@ -218,7 +253,10 @@ pub fn parse_name_and_version(spec: &str) -> CargoResult<(String, Option<String>
         .next()
         .context(format!("Crate version missing in `{}`.", spec))?;
 
-    Ok((crate_.to_owned(), Some(parse_version_req(version)?)))
+    Ok(Crate::new(
+        crate_.to_owned(),
+        Some(parse_version_req(version)?),
+    ))
 }
 
 #[cfg(test)]
@@ -269,19 +307,19 @@ mod tests {
     fn test_parse_name_and_version() {
         assert_eq!(
             parse_name_and_version("foo").unwrap(),
-            (String::from("foo"), None)
+            Crate::new(String::from("foo"), None)
         );
         assert_eq!(
             parse_name_and_version("foo@1.1.3").unwrap(),
-            (String::from("foo"), Some(String::from("=1.1.3")))
+            Crate::new(String::from("foo"), Some(String::from("=1.1.3")))
         );
         assert_eq!(
             parse_name_and_version("foo@~1.1.3").unwrap(),
-            (String::from("foo"), Some(String::from("~1.1.3")))
+            Crate::new(String::from("foo"), Some(String::from("~1.1.3")))
         );
         assert_eq!(
             parse_name_and_version("foo@1.1.*").unwrap(),
-            (String::from("foo"), Some(String::from("1.1.*")))
+            Crate::new(String::from("foo"), Some(String::from("1.1.*")))
         );
     }
 }

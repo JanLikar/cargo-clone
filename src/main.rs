@@ -61,14 +61,15 @@ fn main() {
         .arg(
             Arg::with_name("git")
                 .long("git")
-                .help("Clone from repository specified in package's metadata."),
+                .help("Clone from a repository specified in package's metadata."),
         )
         .arg(
             Arg::with_name("crate")
-                .help("The name of the crate to be downloaded.")
-                .required(true),
+                .help("The crates to be downloaded. Versions may also be specified and are matched exactly by default. Examples: 'cargo-clone@1.0.0' 'cargo-clone@~1.0.0'.")
+                .required(true)
+                .multiple(true),
         )
-        .arg(Arg::with_name("directory").help("The destination directory."));
+        .arg(Arg::with_name("directory").help("The destination directory. If it ends in a slash, crates will be placed into its subdirectories.").last(true));
 
     let matches = app.get_matches();
     let mut config = Config::default().expect("Unable to get config.");
@@ -114,11 +115,16 @@ pub fn execute(matches: clap::ArgMatches, config: &mut Config) -> Result<Option<
         SourceId::crates_io(config)?
     };
 
-    let (krate, vers) = cargo_clone::parse_name_and_version(matches.value_of("crate").unwrap())?;
     let directory = matches.value_of("directory");
-    let git = matches.is_present("git");
+    let use_git = matches.is_present("git");
 
-    let opts = cargo_clone::CloneOpts::new(&krate, &source_id, directory, git, vers.as_deref());
+    let crates = matches
+        .values_of("crate")
+        .unwrap()
+        .map(cargo_clone::parse_name_and_version)
+        .collect::<Result<Vec<cargo_clone::Crate>>>()?;
+
+    let opts = cargo_clone::CloneOpts::new(&crates, &source_id, directory, use_git);
 
     cargo_clone::clone(&opts, config)?;
 

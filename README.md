@@ -7,6 +7,9 @@
 
 cargo-clone can be used to fetch the source code of a Rust crate.
 
+
+    cargo clone [FLAGS] [OPTIONS] <crate>... [-- <directory>]
+
 cargo-clone is a [Cargo subcommand](https://github.com/rust-lang/cargo/wiki/Third-party-cargo-subcommands).
 
 It can be installed using the install subcommand
@@ -17,10 +20,18 @@ and can be used like this:
 
     cargo clone [options] [<crate>]
 
-For example, to download version 0.2.0 of cargo-clone's source from crates.io, you would run
+For example, to download version 1.0.0 of cargo-clone's source from crates.io, you would run
 
-    cargo clone --vers 0.2.0 cargo-clone
+    cargo clone cargo-clone@1.0.0
+
+Downloading multiple packages is also supported:
+
+    cargo clone cargo-clone@1.0.0 serde time
+
+The output dir can be specified as the last argument:
+
+    cargo clone serde time -- packages/
 
 To checkout a git repo specified in the package's Cargo.toml, you can use the `--git` flag:
 
-    cargo clone cargo-clone --git
+    cargo clone --git cargo-clone
