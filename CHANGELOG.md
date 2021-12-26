@@ -7,9 +7,13 @@
 - Removed option to download multiple crates to simplify the CLI.
 - Removed option to clone from git repo directly. This was deemed out-of-scope.
 - Removed dependency on Serde.
+- Removed `--path` as it is unneeded.
 
 ### Changed
 - clap.rs is used instead of Docopt.
+- `--prefix` is now a positional argument named `directory`.
+- `--alt-registry` is now `--registry`.
+- `--registry-url` is now `--index`.
 - Several other minimal CLI changes.
 
 

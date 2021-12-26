@@ -21,8 +21,6 @@ For example, to download version 0.2.0 of cargo-clone's source from crates.io, y
 
     cargo clone --vers 0.2.0 cargo-clone
 
-To checkout a git repo specified in the package's Cargo.toml, you can use the `--git` flag.
-Git must be installed for this to work.
+To checkout a git repo specified in the package's Cargo.toml, you can use the `--git` flag:
 
     cargo clone cargo-clone --git
-

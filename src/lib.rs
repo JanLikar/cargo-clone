@@ -26,7 +26,7 @@ use walkdir::WalkDir;
 pub fn clone(
     krate: Option<&str>,
     srcid: &SourceId,
-    prefix: Option<&str>,
+    directory: Option<&str>,
     git: bool,
     vers: Option<&str>,
     config: &Config,
@@ -56,7 +56,7 @@ pub fn clone(
     };
 
     // If prefix was not supplied, clone into current dir
-    let dest_path = match prefix {
+    let dest_path = match directory {
         Some(path) => PathBuf::from(path),
         None => {
             let mut dest = env::current_dir()?;
