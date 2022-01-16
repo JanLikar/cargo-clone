@@ -13,10 +13,10 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.52"
-cargo = "0.58.0"
+cargo = "0.59.0"
 clap = "2.34.0"
 semver = "1.0.4"
 walkdir = "2.3.2"
 
 [dev-dependencies]
-tempdir = "0.3.5"
+tempdir = "0.3.7"
