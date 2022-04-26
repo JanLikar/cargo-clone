@@ -1,3 +1,7 @@
+## [1.0.1] - 2022-04-26
+### Changed
+- Dependencies were updated.
+
 ## [1.0.0] - 2021-12-27
 ### Added
 - Can now clone a package from a git repository specified in package's Cargo.toml file using `--git`.
