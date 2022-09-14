@@ -20,3 +20,6 @@ walkdir = "2.3.2"
 
 [dev-dependencies]
 tempdir = "0.3.7"
+
+[features]
+vendored-openssl = ["cargo/vendored-openssl"]
