@@ -159,7 +159,17 @@ version = "1.0.1"
 dependencies = [
  "anyhow",
  "cargo",
+ "cargo-clone-core",
  "clap 2.34.0",
+ "tempdir",
+]
+
+[[package]]
+name = "cargo-clone-core"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "cargo",
  "semver",
  "tempdir",
  "walkdir",

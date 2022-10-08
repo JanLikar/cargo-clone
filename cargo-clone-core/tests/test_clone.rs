@@ -12,7 +12,7 @@ fn test_from_registry() {
 
     let config = Config::default().unwrap();
 
-    let crates = vec![cargo_clone::Crate::new(
+    let crates = vec![cargo_clone_core::Crate::new(
         String::from("cargo-clone"),
         Some(String::from("0.2.0")),
     )];
@@ -20,9 +20,9 @@ fn test_from_registry() {
     let git = false;
     let directory = Some(output_path.to_str().unwrap());
 
-    let opts = cargo_clone::CloneOpts::new(&crates, &source_id, directory, git);
+    let opts = cargo_clone_core::CloneOpts::new(&crates, &source_id, directory, git);
 
-    cargo_clone::clone(&opts, &config).unwrap();
+    cargo_clone_core::clone(&opts, &config).unwrap();
 
     assert!(output_path.exists());
     assert!(output_path.join("Cargo.toml").exists());
@@ -38,7 +38,7 @@ fn test_dir_path() {
 
     let config = Config::default().unwrap();
 
-    let crates = vec![cargo_clone::Crate::new(
+    let crates = vec![cargo_clone_core::Crate::new(
         String::from("cargo-clone"),
         Some(String::from("0.2.0")),
     )];
@@ -46,9 +46,9 @@ fn test_dir_path() {
     let git = false;
     let directory = Some(format!("{}/", output_path.to_str().unwrap()));
 
-    let opts = cargo_clone::CloneOpts::new(&crates, &source_id, directory.as_deref(), git);
+    let opts = cargo_clone_core::CloneOpts::new(&crates, &source_id, directory.as_deref(), git);
 
-    cargo_clone::clone(&opts, &config).unwrap();
+    cargo_clone_core::clone(&opts, &config).unwrap();
 
     assert!(output_path.join("cargo-clone").exists());
     assert!(output_path.join("cargo-clone").join("Cargo.toml").exists());
@@ -64,16 +64,16 @@ fn test_multi_crates() {
     let config = Config::default().unwrap();
 
     let crates = vec![
-        cargo_clone::Crate::new(String::from("cargo-clone"), Some(String::from("0.2.0"))),
-        cargo_clone::Crate::new(String::from("tokio"), None),
+        cargo_clone_core::Crate::new(String::from("cargo-clone"), Some(String::from("0.2.0"))),
+        cargo_clone_core::Crate::new(String::from("tokio"), None),
     ];
     let source_id = SourceId::crates_io(&config).unwrap();
     let git = false;
     let directory = Some(format!("{}/", output_path.to_str().unwrap()));
 
-    let opts = cargo_clone::CloneOpts::new(&crates, &source_id, directory.as_deref(), git);
+    let opts = cargo_clone_core::CloneOpts::new(&crates, &source_id, directory.as_deref(), git);
 
-    cargo_clone::clone(&opts, &config).unwrap();
+    cargo_clone_core::clone(&opts, &config).unwrap();
 
     assert!(output_path.join("cargo-clone").exists());
     assert!(output_path.join("cargo-clone").join("Cargo.toml").exists());

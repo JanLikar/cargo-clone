@@ -1,7 +1,12 @@
-use std::fs;
 use std::process::Command;
+use std::{env, fs};
 
 use tempdir::TempDir;
+
+fn cargo_clone_cmd() -> String {
+    let target_dir = env::var("CARGO_TARGET_DIR").unwrap_or_else(|_| "../target".to_string());
+    format!("{target_dir}/debug/cargo-clone")
+}
 
 #[test]
 fn test_cli() {
@@ -10,7 +15,7 @@ fn test_cli() {
 
     assert!(!output_path.exists());
 
-    let status = Command::new("target/debug/cargo-clone")
+    let status = Command::new(cargo_clone_cmd())
         .arg("clone")
         .arg("cargo-clone")
         .arg("--")
@@ -30,7 +35,7 @@ fn test_custom_index() {
 
     assert!(!output_path.exists());
 
-    let status = Command::new("target/debug/cargo-clone")
+    let status = Command::new(cargo_clone_cmd())
         .arg("clone")
         .arg("--index")
         .arg("https://github.com/rust-lang/crates.io-index")
@@ -50,7 +55,7 @@ fn test_clone_into_existing() {
     let temp_dir = TempDir::new("cargo-clone-tests").unwrap();
     let output_path = temp_dir.path();
 
-    let status = Command::new("target/debug/cargo-clone")
+    let status = Command::new(cargo_clone_cmd())
         .arg("clone")
         .arg("time")
         .arg("--")
@@ -71,7 +76,7 @@ fn test_with_version() {
 
     assert!(!output_path.exists());
 
-    let status = Command::new("target/debug/cargo-clone")
+    let status = Command::new(cargo_clone_cmd())
         .arg("clone")
         .arg("tokei@6.1.2")
         .arg("--")

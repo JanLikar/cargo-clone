@@ -282,11 +282,12 @@ mod tests {
 
     #[test]
     fn test_clone_directory() {
-        let from = Path::new("tests/data");
+        let manifest_dir = env::var("CARGO_MANIFEST_DIR").unwrap();
+        let from = PathBuf::from(manifest_dir).join("tests/data");
         let to = TempDir::new("cargo-clone-tests").unwrap();
         let to_path = to.path();
 
-        clone_directory(&from, &to_path).unwrap();
+        clone_directory(&from, to_path).unwrap();
 
         assert!(to_path.join("Cargo.toml").exists());
         assert!(!to_path.join("cargo-ok").exists());
