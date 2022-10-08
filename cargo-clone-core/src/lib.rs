@@ -262,7 +262,6 @@ pub fn parse_name_and_version(spec: &str) -> CargoResult<Crate> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::path::Path;
     use tempdir::TempDir;
 
     #[test]
