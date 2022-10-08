@@ -4,7 +4,7 @@ use std::{env, fs};
 use tempdir::TempDir;
 
 fn cargo_clone_cmd() -> String {
-    let target_dir = env::var("CARGO_TARGET_DIR").unwrap();
+    let target_dir = env::var("CARGO_TARGET_DIR").unwrap_or_else(|_| "../target".to_string());
     format!("{target_dir}/debug/cargo-clone")
 }
 
