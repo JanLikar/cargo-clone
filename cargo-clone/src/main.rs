@@ -126,12 +126,12 @@ pub fn execute(matches: clap::ArgMatches, config: &mut Config) -> Result<Option<
     let crates = matches
         .values_of("crate")
         .unwrap()
-        .map(cargo_clone::parse_name_and_version)
-        .collect::<Result<Vec<cargo_clone::Crate>>>()?;
+        .map(cargo_clone_core::parse_name_and_version)
+        .collect::<Result<Vec<cargo_clone_core::Crate>>>()?;
 
-    let opts = cargo_clone::CloneOpts::new(&crates, &source_id, directory, use_git);
+    let opts = cargo_clone_core::CloneOpts::new(&crates, &source_id, directory, use_git);
 
-    cargo_clone::clone(&opts, config)?;
+    cargo_clone_core::clone(&opts, config)?;
 
     Ok(None)
 }

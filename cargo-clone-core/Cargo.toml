@@ -1,0 +1,20 @@
+[package]
+authors = ["Jan Likar <likar.jan@gmail.com>"]
+name = "cargo-clone-core"
+version = "0.1.0"
+edition = "2021"
+description = "A library to fetch the source code of a Rust crate"
+documentation = "https://github.com/JanLikar/cargo-clone"
+homepage = "https://github.com/JanLikar/cargo-clone"
+keywords = ["cargo", "subcommand", "clone"]
+license = "Apache-2.0/MIT"
+repository = "https://github.com/JanLikar/cargo-clone"
+
+[dependencies]
+anyhow.workspace = true
+cargo.workspace = true
+semver = "1.0.4"
+walkdir = "2.3.2"
+
+[dev-dependencies]
+tempdir.workspace = true

@@ -1,0 +1,24 @@
+[package]
+authors = ["Jan Likar <likar.jan@gmail.com>"]
+description = "A cargo subcommand to fetch the source code of a Rust crate"
+documentation = "https://github.com/JanLikar/cargo-clone"
+homepage = "https://github.com/JanLikar/cargo-clone"
+keywords = ["cargo", "subcommand", "clone"]
+license = "Apache-2.0/MIT"
+name = "cargo-clone"
+readme = "README.md"
+repository = "https://github.com/JanLikar/cargo-clone"
+version = "1.0.1"
+edition = "2021"
+
+[dependencies]
+cargo-clone-core = { path = "../cargo-clone-core", version = "0.1" }
+anyhow.workspace = true
+cargo.workspace = true
+clap = "2.34.0"
+
+[dev-dependencies]
+tempdir.workspace = true
+
+[features]
+vendored-openssl = ["cargo/vendored-openssl"]
