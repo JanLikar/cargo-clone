@@ -286,7 +286,7 @@ mod tests {
         let to = TempDir::new("cargo-clone-tests").unwrap();
         let to_path = to.path();
 
-        clone_directory(&from, &to_path).unwrap();
+        clone_directory(from, to_path).unwrap();
 
         assert!(to_path.join("Cargo.toml").exists());
         assert!(!to_path.join("cargo-ok").exists());
