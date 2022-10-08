@@ -1,3 +1,10 @@
+## [1.1.0] - 2022-10-08
+### Added
+- Expose cargo's vendored-openssl feature by @dtolnay in https://github.com/JanLikar/cargo-clone/pull/49
+- feat: extract library by @MarcoIeni in https://github.com/JanLikar/cargo-clone/pull/50
+- Run clippy on tests by @MarcoIeni in https://github.com/JanLikar/cargo-clone/pull/51
+- feat: re-export cargo types by @MarcoIeni in https://github.com/JanLikar/cargo-clone/pull/52
+
 ## [1.0.1] - 2022-04-26
 ### Changed
 - Dependencies were updated.
