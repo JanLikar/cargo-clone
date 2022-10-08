@@ -14,14 +14,19 @@ use std::process::Command;
 use anyhow::{bail, Context};
 
 use cargo::core::dependency::Dependency;
-use cargo::core::source::{Source, SourceId};
+use cargo::core::source::Source;
 use cargo::core::Package;
 use cargo::sources::{PathSource, SourceConfigMap};
-use cargo::util::{CargoResult, Config};
 
 use semver::VersionReq;
 
 use walkdir::WalkDir;
+
+// Re-export cargo types.
+pub use cargo::{
+    core::SourceId,
+    util::{CargoResult, Config},
+};
 
 #[derive(PartialEq, Eq, Debug)]
 pub struct Crate {
