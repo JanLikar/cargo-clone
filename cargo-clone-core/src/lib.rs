@@ -16,6 +16,7 @@ use anyhow::{bail, Context};
 use cargo::core::dependency::Dependency;
 use cargo::core::source::Source;
 use cargo::core::Package;
+use cargo::core::QueryKind;
 use cargo::sources::{PathSource, SourceConfigMap};
 
 use semver::VersionReq;
@@ -159,11 +160,19 @@ fn select_pkg<'a, T>(
 where
     T: Source + 'a,
 {
-    src.update()?;
+    src.invalidate_cache();
 
     let dep = Dependency::parse(name, vers, src.source_id())?;
     let mut summaries = vec![];
-    src.query(&dep, &mut |summary| summaries.push(summary))?;
+
+    loop {
+        match src.query(&dep, QueryKind::Exact, &mut |summary| {
+            summaries.push(summary)
+        })? {
+            std::task::Poll::Ready(()) => break,
+            std::task::Poll::Pending => src.block_until_ready()?,
+        }
+    }
 
     let latest = summaries.iter().max_by_key(|s| s.version());
 
@@ -217,7 +226,7 @@ fn clone_directory(from: &Path, to: &Path) -> CargoResult<()> {
 
         if file_type.is_file() {
             // .cargo-ok is not wanted in this context
-            fs::copy(&entry.path(), &dest_path)?;
+            fs::copy(entry.path(), &dest_path)?;
         } else if file_type.is_dir() {
             if dest_path == to {
                 continue;
