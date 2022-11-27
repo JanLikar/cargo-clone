@@ -162,6 +162,7 @@ where
     T: Source + 'a,
 {
     let latest = {
+        // Try to retrieve the summary twice.
         match get_latest_summary(name, vers, &mut src)? {
             Some(summary) => Some(summary),
             None => {
