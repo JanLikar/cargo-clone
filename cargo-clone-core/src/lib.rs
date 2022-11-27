@@ -17,6 +17,7 @@ use cargo::core::dependency::Dependency;
 use cargo::core::source::Source;
 use cargo::core::Package;
 use cargo::core::QueryKind;
+use cargo::core::Summary;
 use cargo::sources::{PathSource, SourceConfigMap};
 
 use semver::VersionReq;
@@ -160,21 +161,16 @@ fn select_pkg<'a, T>(
 where
     T: Source + 'a,
 {
-    src.invalidate_cache();
-
-    let dep = Dependency::parse(name, vers, src.source_id())?;
-    let mut summaries = vec![];
-
-    loop {
-        match src.query(&dep, QueryKind::Exact, &mut |summary| {
-            summaries.push(summary)
-        })? {
-            std::task::Poll::Ready(()) => break,
-            std::task::Poll::Pending => src.block_until_ready()?,
+    let latest = {
+        match get_latest_summary(name, vers, &mut src)? {
+            Some(summary) => Some(summary),
+            None => {
+                // Retry to retrieve the latest summary with an updated source.
+                src.invalidate_cache();
+                get_latest_summary(name, vers, &mut src)?
+            }
         }
-    }
-
-    let latest = summaries.iter().max_by_key(|s| s.version());
+    };
 
     match latest {
         Some(l) => {
@@ -186,6 +182,38 @@ where
         }
         None => bail!("Package `{}@{}` not found", name, vers.unwrap_or("*.*.*")),
     }
+}
+
+/// Get the package summary matching the given `name` and `version`.
+/// If `version` is `None`, the latest version is returned.
+fn get_latest_summary<'a, T>(
+    name: &str,
+    version: Option<&str>,
+    src: &mut T,
+) -> anyhow::Result<Option<Summary>>
+where
+    T: Source + 'a,
+{
+    let dep = Dependency::parse(name, version, src.source_id())?;
+    let mut max_summary: Option<Summary> = None;
+    loop {
+        match src.query(
+            &dep,
+            QueryKind::Exact,
+            &mut |summary| match &mut max_summary {
+                Some(max) => {
+                    if summary.version() > max.version() {
+                        max_summary = Some(summary);
+                    }
+                }
+                None => max_summary = Some(summary),
+            },
+        )? {
+            std::task::Poll::Ready(()) => break,
+            std::task::Poll::Pending => src.block_until_ready()?,
+        }
+    }
+    Ok(max_summary)
 }
 
 fn parse_version_req(version: &str) -> CargoResult<String> {
