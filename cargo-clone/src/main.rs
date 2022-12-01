@@ -96,7 +96,7 @@ fn version() -> String {
 }
 
 pub fn execute(matches: clap::ArgMatches, config: &mut Config) -> Result<Option<()>> {
-    let verbose = if matches.is_present("verbose") { 1 } else { 0 };
+    let verbose = u32::from(matches.is_present("verbose"));
 
     config.configure(
         verbose,

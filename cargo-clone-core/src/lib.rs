@@ -78,6 +78,9 @@ pub fn clone(opts: &CloneOpts, config: &Config) -> CargoResult<()> {
         .map(PathBuf::from)
         .unwrap_or(env::current_dir()?);
 
+    let mut src = get_source(opts.srcid, config)?;
+    src.invalidate_cache();
+
     for crate_ in opts.crates {
         let mut dest_path = dir_path.clone();
 
@@ -102,19 +105,23 @@ pub fn clone(opts: &CloneOpts, config: &Config) -> CargoResult<()> {
             );
         }
 
-        clone_single(crate_, &dest_path, opts, config)?;
+        clone_single(crate_, &dest_path, opts, config, &mut src)?;
     }
 
     Ok(())
 }
 
-pub fn clone_single(
+pub fn clone_single<'a, T>(
     crate_: &Crate,
     dest_path: &Path,
     opts: &CloneOpts,
     config: &Config,
-) -> CargoResult<()> {
-    let pkg = get_package(crate_, opts, config)?;
+    src: &mut T,
+) -> CargoResult<()>
+where
+    T: Source + 'a,
+{
+    let pkg = select_pkg(config, src, &crate_.name, crate_.version.as_deref())?;
 
     if opts.git {
         let repo = &pkg.manifest().metadata().repository;
@@ -134,34 +141,26 @@ pub fn clone_single(
     Ok(())
 }
 
-fn get_package(crate_: &Crate, opts: &CloneOpts, config: &Config) -> CargoResult<Package> {
-    if opts.srcid.is_path() {
-        let path = opts.srcid.url().to_file_path().expect("path must be valid");
-        let src = PathSource::new(&path, *opts.srcid, config);
-
-        select_pkg(config, src, &crate_.name, crate_.version.as_deref())
+fn get_source<'a>(srcid: &SourceId, config: &'a Config) -> CargoResult<Box<dyn Source + 'a>> {
+    let source = if srcid.is_path() {
+        let path = srcid.url().to_file_path().expect("path must be valid");
+        Box::new(PathSource::new(&path, *srcid, config))
     } else {
         let map = SourceConfigMap::new(config)?;
-        select_pkg(
-            config,
-            map.load(*opts.srcid, &Default::default())?,
-            &crate_.name,
-            crate_.version.as_deref(),
-        )
-    }
+        map.load(*srcid, &Default::default())?
+    };
+    Ok(source)
 }
 
 fn select_pkg<'a, T>(
     config: &Config,
-    mut src: T,
+    src: &mut T,
     name: &str,
     vers: Option<&str>,
 ) -> CargoResult<Package>
 where
     T: Source + 'a,
 {
-    src.invalidate_cache();
-
     let dep = Dependency::parse(name, vers, src.source_id())?;
     let mut summaries = vec![];
 
