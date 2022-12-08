@@ -1,7 +1,9 @@
 use std::{env, path::PathBuf};
 
 use anyhow::Context;
-use cargo::{core::SourceId, util::IntoUrl, CargoResult, Config};
+use cargo::{core::SourceId, CargoResult, Config};
+
+use crate::ClonerSource;
 
 pub struct Cloner {
     /// Cargo configuration.
@@ -19,43 +21,7 @@ pub struct Cloner {
 pub struct ClonerBuilder {
     config: Option<Config>,
     directory: Option<PathBuf>,
-    source: CargoSource,
-}
-
-#[derive(Debug, Default)]
-pub enum CargoSource {
-    #[default]
-    CratesIo,
-    ///
-    Index(String),
-    LocalRegistry(String),
-    Registry(String),
-}
-
-impl CargoSource {
-    /// Creates a [`Source`] from the name of the remote registry.
-    pub fn registry(self, key: impl Into<String>) -> Self {
-        CargoSource::Registry(key.into())
-    }
-
-    /// Creates a [`Source`] from a local registry path.
-    pub fn local_registry(self, path: impl Into<String>) -> Self {
-        CargoSource::LocalRegistry(path.into())
-    }
-
-    /// Creates a [`Source`] from a remote registry URL.
-    pub fn index(self, index: impl Into<String>) -> Self {
-        CargoSource::Index(index.into())
-    }
-
-    fn to_source_id(&self, config: &Config) -> CargoResult<SourceId> {
-        match self {
-            CargoSource::CratesIo => SourceId::crates_io(config),
-            CargoSource::Index(url) => SourceId::for_registry(&url.into_url()?),
-            CargoSource::LocalRegistry(path) => SourceId::for_local_registry(&config.cwd().join(path)),
-            CargoSource::Registry(key) => SourceId::alt_registry(config, key),
-        }
-    }
+    source: ClonerSource,
 }
 
 impl ClonerBuilder {
@@ -78,7 +44,7 @@ impl ClonerBuilder {
     }
 
     /// Clone from an alternative source, instead of crates.io.
-    pub fn with_source(self, source: CargoSource) -> Self {
+    pub fn with_source(self, source: ClonerSource) -> Self {
         Self { source, ..self }
     }
 
@@ -87,6 +53,7 @@ impl ClonerBuilder {
             Some(config) => config,
             None => Config::default().context("Unable to get cargo config.")?,
         };
+
         let directory = match self.directory {
             Some(directory) => directory,
             None => env::current_dir().context("Unable to get current directory.")?,
@@ -94,8 +61,10 @@ impl ClonerBuilder {
 
         let source_id = self
             .source
+            .cargo_source
             .to_source_id(&config)
             .context("can't determine the source id")?;
+
         Ok(Cloner {
             config,
             directory,

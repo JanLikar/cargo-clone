@@ -7,8 +7,10 @@
 // except according to those terms.
 
 pub mod cloner;
+pub mod source;
 
 pub use cloner::*;
+pub use source::*;
 
 use std::env;
 use std::fs;
