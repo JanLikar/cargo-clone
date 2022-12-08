@@ -19,11 +19,11 @@ pub struct Cloner {
 pub struct ClonerBuilder {
     config: Option<Config>,
     directory: Option<PathBuf>,
-    source: Source,
+    source: CargoSource,
 }
 
 #[derive(Debug, Default)]
-pub enum Source {
+pub enum CargoSource {
     #[default]
     CratesIo,
     ///
@@ -32,28 +32,28 @@ pub enum Source {
     Registry(String),
 }
 
-impl Source {
+impl CargoSource {
     /// Creates a [`Source`] from the name of the remote registry.
     pub fn registry(self, key: impl Into<String>) -> Self {
-        Source::Registry(key.into())
+        CargoSource::Registry(key.into())
     }
 
     /// Creates a [`Source`] from a local registry path.
     pub fn local_registry(self, path: impl Into<String>) -> Self {
-        Source::LocalRegistry(path.into())
+        CargoSource::LocalRegistry(path.into())
     }
 
     /// Creates a [`Source`] from a remote registry URL.
     pub fn index(self, index: impl Into<String>) -> Self {
-        Source::Index(index.into())
+        CargoSource::Index(index.into())
     }
 
     fn to_source_id(&self, config: &Config) -> CargoResult<SourceId> {
         match self {
-            Source::CratesIo => SourceId::crates_io(config),
-            Source::Index(url) => SourceId::for_registry(&url.into_url()?),
-            Source::LocalRegistry(path) => SourceId::for_local_registry(&config.cwd().join(path)),
-            Source::Registry(key) => SourceId::alt_registry(config, key),
+            CargoSource::CratesIo => SourceId::crates_io(config),
+            CargoSource::Index(url) => SourceId::for_registry(&url.into_url()?),
+            CargoSource::LocalRegistry(path) => SourceId::for_local_registry(&config.cwd().join(path)),
+            CargoSource::Registry(key) => SourceId::alt_registry(config, key),
         }
     }
 }
@@ -78,7 +78,7 @@ impl ClonerBuilder {
     }
 
     /// Clone from an alternative source, instead of crates.io.
-    pub fn with_source(self, source: Source) -> Self {
+    pub fn with_source(self, source: CargoSource) -> Self {
         Self { source, ..self }
     }
 
