@@ -13,6 +13,7 @@ pub struct Cloner {
     directory: PathBuf,
     /// Where the crates will be cloned from.
     source_id: SourceId,
+    use_git: bool,
 }
 
 /// Builder for [`Cloner`].
@@ -22,6 +23,7 @@ pub struct ClonerBuilder {
     config: Option<Config>,
     directory: Option<PathBuf>,
     source: ClonerSource,
+    use_git: bool,
 }
 
 impl ClonerBuilder {
@@ -48,6 +50,11 @@ impl ClonerBuilder {
         Self { source, ..self }
     }
 
+    /// Clone the git repository present in the manifest metadata.
+    pub fn with_git(self, use_git: bool) -> Self {
+        Self { use_git, ..self }
+    }
+
     pub fn build(self) -> CargoResult<Cloner> {
         let config = match self.config {
             Some(config) => config,
@@ -69,6 +76,7 @@ impl ClonerBuilder {
             config,
             directory,
             source_id,
+            use_git: self.use_git,
         })
     }
 }
