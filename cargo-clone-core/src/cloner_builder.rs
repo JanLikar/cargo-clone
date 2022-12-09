@@ -23,7 +23,7 @@ pub struct ClonerBuilder {
 }
 
 impl ClonerBuilder {
-    /// Creates a new [`ClonerBuilder`], that:
+    /// Creates a new [`ClonerBuilder`] that:
     /// - uses crates.io as source.
     /// - clones the crates into the current directory.
     pub fn new() -> Self {
