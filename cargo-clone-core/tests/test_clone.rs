@@ -2,16 +2,14 @@ use cargo_clone_core::ClonerBuilder;
 use tempdir::TempDir;
 
 #[test]
-fn test_from_registry() {
+fn test_from_registry_in_dir() {
     let temp_dir = TempDir::new("cargo-clone-tests").unwrap();
     let output_path = temp_dir.path().join("cargo-clone");
 
     assert!(!output_path.exists());
 
-    let crates = vec![cargo_clone_core::Crate::new(
-        String::from("cargo-clone"),
-        Some(String::from("0.2.0")),
-    )];
+    let crate_ =
+        cargo_clone_core::Crate::new(String::from("cargo-clone"), Some(String::from("0.2.0")));
     let directory = output_path.to_str().unwrap();
 
     let cloner = ClonerBuilder::new()
@@ -19,10 +17,32 @@ fn test_from_registry() {
         .build()
         .unwrap();
 
-    cloner.clone(&crates).unwrap();
+    cloner.clone_in_dir(&crate_).unwrap();
 
     assert!(output_path.exists());
     assert!(output_path.join("Cargo.toml").exists());
+}
+
+#[test]
+fn test_from_registry() {
+    let temp_dir = TempDir::new("cargo-clone-tests").unwrap();
+    let output_path = temp_dir.path().join("cargo-clone");
+
+    assert!(!output_path.exists());
+
+    let crate_ =
+        cargo_clone_core::Crate::new(String::from("cargo-clone"), Some(String::from("0.2.0")));
+    let directory = output_path.to_str().unwrap();
+
+    let cloner = ClonerBuilder::new()
+        .with_directory(directory)
+        .build()
+        .unwrap();
+
+    cloner.clone(&[crate_]).unwrap();
+
+    assert!(output_path.join("cargo-clone").exists());
+    assert!(output_path.join("cargo-clone").join("Cargo.toml").exists());
 }
 
 #[test]

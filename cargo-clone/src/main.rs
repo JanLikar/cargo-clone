@@ -138,7 +138,8 @@ pub fn execute(matches: &clap::ArgMatches) -> Result<()> {
 
     let config = cargo_config(matches)?;
     let mut cloner_builder = ClonerBuilder::new().with_source(source).with_config(config);
-    if let Some(directory) = matches.value_of("directory") {
+    let directory = matches.value_of("directory");
+    if let Some(directory) = directory {
         cloner_builder = cloner_builder.with_directory(directory);
     }
     if matches.is_present("git") {
@@ -149,7 +150,16 @@ pub fn execute(matches: &clap::ArgMatches) -> Result<()> {
         .build()
         .context("Failed to setup cargo-clone")?;
 
-    cloner.clone(&crates).context("Error while cloning")?;
+    let should_append_crate_dir = {
+        let multiple_crates = crates.len() > 1;
+        let can_clone_in_dir = directory.map(|d| d.ends_with('/')).unwrap_or(true);
+        multiple_crates && can_clone_in_dir
+    };
 
-    Ok(())
+    if should_append_crate_dir {
+        cloner.clone(&crates)
+    } else {
+        cloner.clone_in_dir(&crates[0])
+    }
+    .context("Error while cloning")
 }
