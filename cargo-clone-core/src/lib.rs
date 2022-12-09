@@ -76,53 +76,62 @@ impl Cloner {
     }
 
     /// Clone the specified crate from registry or git repository.
+    /// The crate is cloned in the directory specified by the [`ClonerBuilder`].
+    pub fn clone_in_dir(&self, crate_: &Crate) -> CargoResult<()> {
+        let _lock = self.config.acquire_package_cache_lock()?;
+
+        let mut src = get_source(&self.srcid, &self.config)?;
+
+        self.clone_in(crate_, &self.directory, &mut src)
+    }
+
+    /// Clone the specified crates from registry or git repository.
+    /// Each crate is cloned in a subdirectory named as the crate name.
     pub fn clone(&self, crates: &[Crate]) -> CargoResult<()> {
         let _lock = self.config.acquire_package_cache_lock()?;
 
-        // If prefix was not supplied, use current dir.
-
         let mut src = get_source(&self.srcid, &self.config)?;
-        src.invalidate_cache();
 
         for crate_ in crates {
             let mut dest_path = self.directory.clone();
 
             dest_path.push(&crate_.name);
 
-            if !dest_path.exists() {
-                fs::create_dir_all(&dest_path)?;
-            }
-
-            self.config
-                .shell()
-                .verbose(|s| s.note(format!("Cloning into {:?}", &self.directory)))?;
-
-            // Cloning into an existing directory is only allowed if the directory is empty.
-            let is_empty = dest_path.read_dir()?.next().is_none();
-            if !is_empty {
-                bail!(
-                    "destination path '{}' already exists and is not an empty directory.",
-                    dest_path.display()
-                );
-            }
-
-            self.clone_single(crate_, &dest_path, &self.config, &mut src)?;
+            self.clone_in(crate_, &dest_path, &mut src)?;
         }
 
         Ok(())
     }
 
-    fn clone_single<'a, T>(
-        &self,
-        crate_: &Crate,
-        dest_path: &Path,
-        config: &Config,
-        src: &mut T,
-    ) -> CargoResult<()>
+    fn clone_in<'a, T>(&self, crate_: &Crate, dest_path: &Path, src: &mut T) -> CargoResult<()>
     where
         T: Source + 'a,
     {
-        let pkg = select_pkg(config, src, &crate_.name, crate_.version.as_deref())?;
+        if !dest_path.exists() {
+            fs::create_dir_all(dest_path)?;
+        }
+
+        self.config
+            .shell()
+            .verbose(|s| s.note(format!("Cloning into {:?}", &self.directory)))?;
+
+        // Cloning into an existing directory is only allowed if the directory is empty.
+        let is_empty = dest_path.read_dir()?.next().is_none();
+        if !is_empty {
+            bail!(
+                "destination path '{}' already exists and is not an empty directory.",
+                dest_path.display()
+            );
+        }
+
+        self.clone_single(crate_, dest_path, src)
+    }
+
+    fn clone_single<'a, T>(&self, crate_: &Crate, dest_path: &Path, src: &mut T) -> CargoResult<()>
+    where
+        T: Source + 'a,
+    {
+        let pkg = select_pkg(&self.config, src, &crate_.name, crate_.version.as_deref())?;
 
         if self.use_git {
             let repo = &pkg.manifest().metadata().repository;
@@ -144,13 +153,15 @@ impl Cloner {
 }
 
 fn get_source<'a>(srcid: &SourceId, config: &'a Config) -> CargoResult<Box<dyn Source + 'a>> {
-    let source = if srcid.is_path() {
+    let mut source = if srcid.is_path() {
         let path = srcid.url().to_file_path().expect("path must be valid");
         Box::new(PathSource::new(&path, *srcid, config))
     } else {
         let map = SourceConfigMap::new(config)?;
         map.load(*srcid, &Default::default())?
     };
+
+    source.invalidate_cache();
     Ok(source)
 }
 
