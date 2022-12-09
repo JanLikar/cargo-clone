@@ -8,6 +8,7 @@
 
 use cargo::{core::SourceId, util::IntoUrl, CargoResult, Config};
 
+/// Where to clone the crate from.
 #[derive(Debug, Default)]
 pub struct ClonerSource {
     pub(crate) cargo_source: CargoSource,
@@ -45,6 +46,7 @@ impl ClonerSource {
         }
     }
 
+    /// Use [crates.io](https://crates.io/) as source.
     pub fn crates_io() -> Self {
         Self {
             cargo_source: CargoSource::CratesIo,

@@ -6,8 +6,12 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-pub mod cloner_builder;
-pub mod source;
+//! Fetch the source code of a Rust crate from a registry.
+
+#![warn(missing_docs)]
+
+mod cloner_builder;
+mod source;
 
 pub use cloner_builder::*;
 pub use source::*;
@@ -35,6 +39,7 @@ pub use cargo::{
     util::{CargoResult, Config},
 };
 
+/// Rust crate.
 #[derive(PartialEq, Eq, Debug)]
 pub struct Crate {
     name: String,
@@ -42,11 +47,14 @@ pub struct Crate {
 }
 
 impl Crate {
+    /// Create a new [`Crate`].
+    /// If `version` is not specified, the latest version is chosen.
     pub fn new(name: String, version: Option<String>) -> Crate {
         Crate { name, version }
     }
 }
 
+/// Clones a crate.
 pub struct Cloner {
     /// Cargo configuration.
     pub(crate) config: Config,
@@ -96,7 +104,7 @@ impl Cloner {
         Ok(())
     }
 
-    pub fn clone_single<'a, T>(
+    fn clone_single<'a, T>(
         &self,
         crate_: &Crate,
         dest_path: &Path,
