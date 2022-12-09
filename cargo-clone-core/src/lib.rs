@@ -63,6 +63,7 @@ pub struct Cloner {
     pub(crate) directory: PathBuf,
     /// Where the crates will be cloned from.
     pub(crate) srcid: SourceId,
+    /// If true, use `git` to clone the git repository present in the manifest metadata.
     pub(crate) use_git: bool,
 }
 
