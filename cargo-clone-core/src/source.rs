@@ -25,28 +25,28 @@ pub(crate) enum CargoSource {
 }
 
 impl ClonerSource {
-    /// Creates a [`Source`] from the name of the remote registry.
+    /// Creates a [`ClonerSource`] from the name of the remote registry.
     pub fn registry(key: impl Into<String>) -> Self {
         Self {
             cargo_source: CargoSource::Registry(key.into()),
         }
     }
 
-    /// Creates a [`Source`] from a local registry path.
+    /// Creates a [`ClonerSource`] from a local registry path.
     pub fn local_registry(path: impl Into<String>) -> Self {
         Self {
             cargo_source: CargoSource::LocalRegistry(path.into()),
         }
     }
 
-    /// Creates a [`Source`] from a remote registry URL.
+    /// Creates a [`ClonerSource`] from a remote registry URL.
     pub fn index(index: impl Into<String>) -> Self {
         Self {
             cargo_source: CargoSource::Index(index.into()),
         }
     }
 
-    /// Use [crates.io](https://crates.io/) as source.
+    /// Creates a [`ClonerSource`] from [crates.io](https://crates.io/).
     pub fn crates_io() -> Self {
         Self {
             cargo_source: CargoSource::CratesIo,
