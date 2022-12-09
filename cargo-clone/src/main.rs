@@ -6,9 +6,10 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use cargo::core::SourceId;
-use cargo::util::{into_url::IntoUrl, Config};
+use anyhow::Context;
+use cargo::util::Config;
 
+use cargo_clone_core::{ClonerBuilder, ClonerSource};
 use clap::Arg;
 
 type Result<T> = std::result::Result<T, anyhow::Error>;
@@ -77,9 +78,9 @@ fn main() {
         .arg(Arg::with_name("directory").help("The destination directory. If it ends in a slash, crates will be placed into its subdirectories.").last(true));
 
     let matches = app.get_matches();
-    let mut config = Config::default().expect("Unable to get config.");
 
-    if let Err(e) = execute(matches, &mut config) {
+    if let Err(e) = execute(&matches) {
+        let config = cargo_config(&matches).expect("Unable to get config.");
         config.shell().error(e).unwrap();
         std::process::exit(101);
     }
@@ -95,9 +96,10 @@ fn version() -> String {
     )
 }
 
-pub fn execute(matches: clap::ArgMatches, config: &mut Config) -> Result<Option<()>> {
+fn cargo_config(matches: &clap::ArgMatches) -> Result<Config> {
     let verbose = u32::from(matches.is_present("verbose"));
 
+    let mut config = Config::default().expect("Unable to get config.");
     config.configure(
         verbose,
         matches.is_present("quiet"),
@@ -109,19 +111,23 @@ pub fn execute(matches: clap::ArgMatches, config: &mut Config) -> Result<Option<
         &[],
         &[],
     )?;
+    Ok(config)
+}
 
-    let source_id = if let Some(registry) = matches.value_of("registry") {
-        SourceId::alt_registry(config, registry)?
+fn source(matches: &clap::ArgMatches) -> ClonerSource {
+    if let Some(registry) = matches.value_of("registry") {
+        ClonerSource::registry(registry)
     } else if let Some(index) = matches.value_of("index") {
-        SourceId::for_registry(&index.into_url()?)?
+        ClonerSource::index(index)
     } else if let Some(path) = matches.value_of("local-registry") {
-        SourceId::for_local_registry(&config.cwd().join(path))?
+        ClonerSource::local_registry(path)
     } else {
-        SourceId::crates_io(config)?
-    };
+        ClonerSource::crates_io()
+    }
+}
 
-    let directory = matches.value_of("directory");
-    let use_git = matches.is_present("git");
+pub fn execute(matches: &clap::ArgMatches) -> Result<()> {
+    let source = source(matches);
 
     let crates = matches
         .values_of("crate")
@@ -129,9 +135,20 @@ pub fn execute(matches: clap::ArgMatches, config: &mut Config) -> Result<Option<
         .map(cargo_clone_core::parse_name_and_version)
         .collect::<Result<Vec<cargo_clone_core::Crate>>>()?;
 
-    let opts = cargo_clone_core::CloneOpts::new(&crates, &source_id, directory, use_git);
+    let config = cargo_config(matches)?;
+    let mut cloner_builder = ClonerBuilder::new().with_source(source).with_config(config);
+    if let Some(directory) = matches.value_of("directory") {
+        cloner_builder = cloner_builder.with_directory(directory);
+    }
+    if matches.is_present("git") {
+        cloner_builder = cloner_builder.with_git(true);
+    }
 
-    cargo_clone_core::clone(&opts, config)?;
+    let cloner = cloner_builder
+        .build()
+        .context("Failed to setup cargo-clone")?;
 
-    Ok(None)
+    cloner.clone(&crates).context("Error while cloning")?;
+
+    Ok(())
 }

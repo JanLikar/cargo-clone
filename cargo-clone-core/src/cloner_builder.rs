@@ -1,20 +1,9 @@
 use std::{env, path::PathBuf};
 
 use anyhow::Context;
-use cargo::{core::SourceId, CargoResult, Config};
+use cargo::{CargoResult, Config};
 
-use crate::ClonerSource;
-
-pub struct Cloner {
-    /// Cargo configuration.
-    config: Config,
-    /// Directory where the crates will be cloned.
-    /// Each crate is cloned into a subdirectory of this directory.
-    directory: PathBuf,
-    /// Where the crates will be cloned from.
-    source_id: SourceId,
-    use_git: bool,
-}
+use crate::{ClonerSource, Cloner};
 
 /// Builder for [`Cloner`].
 /// By default the cloner will clone from crates.io.
@@ -66,7 +55,7 @@ impl ClonerBuilder {
             None => env::current_dir().context("Unable to get current directory.")?,
         };
 
-        let source_id = self
+        let srcid = self
             .source
             .cargo_source
             .to_source_id(&config)
@@ -75,7 +64,7 @@ impl ClonerBuilder {
         Ok(Cloner {
             config,
             directory,
-            source_id,
+            srcid,
             use_git: self.use_git,
         })
     }
