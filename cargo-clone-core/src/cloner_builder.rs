@@ -3,7 +3,7 @@ use std::{env, path::PathBuf};
 use anyhow::Context;
 use cargo::{CargoResult, Config};
 
-use crate::{ClonerSource, Cloner};
+use crate::{Cloner, ClonerSource};
 
 /// Builder for [`Cloner`].
 /// By default the cloner will clone from crates.io.
@@ -16,10 +16,14 @@ pub struct ClonerBuilder {
 }
 
 impl ClonerBuilder {
+    /// Creates a new [`ClonerBuilder`], that:
+    /// - uses crates.io as source.
+    /// - clones the crates into the current directory.
     pub fn new() -> Self {
         Self::default()
     }
 
+    /// Use the specified cargo configuration, instead of the default one.
     pub fn with_config(self, config: Config) -> Self {
         Self {
             config: Some(config),
@@ -27,6 +31,7 @@ impl ClonerBuilder {
         }
     }
 
+    /// Clone into a different directory, instead of the current one.
     pub fn with_directory(self, directory: impl Into<PathBuf>) -> Self {
         Self {
             directory: Some(directory.into()),
@@ -44,6 +49,7 @@ impl ClonerBuilder {
         Self { use_git, ..self }
     }
 
+    /// Build the [`Cloner`].
     pub fn build(self) -> CargoResult<Cloner> {
         let config = match self.config {
             Some(config) => config,
