@@ -172,6 +172,7 @@ dependencies = [
  "cargo",
  "semver",
  "tempdir",
+ "url",
  "walkdir",
 ]
 

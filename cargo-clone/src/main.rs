@@ -114,20 +114,21 @@ fn cargo_config(matches: &clap::ArgMatches) -> Result<Config> {
     Ok(config)
 }
 
-fn source(matches: &clap::ArgMatches) -> ClonerSource {
-    if let Some(registry) = matches.value_of("registry") {
+fn source(matches: &clap::ArgMatches) -> Result<ClonerSource> {
+    let source = if let Some(registry) = matches.value_of("registry") {
         ClonerSource::registry(registry)
     } else if let Some(index) = matches.value_of("index") {
-        ClonerSource::index(index)
+        ClonerSource::index(index)?
     } else if let Some(path) = matches.value_of("local-registry") {
         ClonerSource::local_registry(path)
     } else {
         ClonerSource::crates_io()
-    }
+    };
+    Ok(source)
 }
 
 pub fn execute(matches: &clap::ArgMatches) -> Result<()> {
-    let source = source(matches);
+    let source = source(matches).context("invalid source")?;
 
     let crates = matches
         .values_of("crate")

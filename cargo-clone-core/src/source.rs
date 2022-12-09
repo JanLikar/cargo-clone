@@ -7,6 +7,7 @@
 // except according to those terms.
 
 use cargo::{core::SourceId, util::IntoUrl, CargoResult, Config};
+use url::Url;
 
 /// Where to clone the crate from.
 #[derive(Debug, Default)]
@@ -18,8 +19,7 @@ pub struct ClonerSource {
 pub(crate) enum CargoSource {
     #[default]
     CratesIo,
-    ///
-    Index(String),
+    Index(Url),
     LocalRegistry(String),
     Registry(String),
 }
@@ -40,10 +40,16 @@ impl ClonerSource {
     }
 
     /// Creates a [`ClonerSource`] from a remote registry URL.
-    pub fn index(index: impl Into<String>) -> Self {
-        Self {
-            cargo_source: CargoSource::Index(index.into()),
-        }
+    pub fn index(index: impl AsRef<str>) -> CargoResult<Self> {
+        let index: &str = index.as_ref();
+        let cargo_source = CargoSource::Index(index.into_url()?);
+        Ok(Self { cargo_source })
+    }
+
+    /// Creates a [`ClonerSource`] from a remote registry URL.
+    pub fn index_from_url(url: Url) -> Self {
+        let cargo_source = CargoSource::Index(url);
+        Self { cargo_source }
     }
 
     /// Creates a [`ClonerSource`] from [crates.io](https://crates.io/).
@@ -58,7 +64,7 @@ impl CargoSource {
     pub(crate) fn to_source_id(&self, config: &Config) -> CargoResult<SourceId> {
         match self {
             CargoSource::CratesIo => SourceId::crates_io(config),
-            CargoSource::Index(url) => SourceId::for_registry(&url.into_url()?),
+            CargoSource::Index(url) => SourceId::for_registry(url),
             CargoSource::LocalRegistry(path) => {
                 SourceId::for_local_registry(&config.cwd().join(path))
             }
