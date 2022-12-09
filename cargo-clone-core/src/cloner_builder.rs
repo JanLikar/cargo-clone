@@ -14,7 +14,6 @@ use cargo::{CargoResult, Config};
 use crate::{Cloner, ClonerSource};
 
 /// Builder for [`Cloner`].
-/// By default the cloner will clone from crates.io.
 #[derive(Debug, Default)]
 pub struct ClonerBuilder {
     config: Option<Config>,

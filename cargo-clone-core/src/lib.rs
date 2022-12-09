@@ -67,6 +67,13 @@ pub struct Cloner {
 }
 
 impl Cloner {
+    /// Creates a new [`ClonerBuilder`], that:
+    /// - uses crates.io as source.
+    /// - clones the crates into the current directory.
+    pub fn builder() -> ClonerBuilder {
+        ClonerBuilder::new()
+    }
+
     /// Clone the specified crate from registry or git repository.
     pub fn clone(&self, crates: &[Crate]) -> CargoResult<()> {
         let _lock = self.config.acquire_package_cache_lock()?;
