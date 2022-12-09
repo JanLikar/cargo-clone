@@ -69,8 +69,8 @@ pub struct Cloner {
 
 impl Cloner {
     /// Creates a new [`ClonerBuilder`] that:
-    /// - uses crates.io as source.
-    /// - clones the crates into the current directory.
+    /// - Uses crates.io as source.
+    /// - Clones the crates into the current directory.
     pub fn builder() -> ClonerBuilder {
         ClonerBuilder::new()
     }
