@@ -1,6 +1,6 @@
-use::assert_cmd::prelude::*;
-use std::process::Command;
+use ::assert_cmd::prelude::*;
 use std::fs;
+use std::process::Command;
 use tempdir::TempDir;
 
 fn cargo_clone_cmd() -> Command {
@@ -46,7 +46,6 @@ fn test_cli_no_directory() {
     assert!(output_path.exists());
     assert!(output_path.join("Cargo.toml").exists());
 }
-
 
 #[test]
 fn test_custom_index() {
