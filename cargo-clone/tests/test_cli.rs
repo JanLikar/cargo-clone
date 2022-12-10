@@ -1,11 +1,10 @@
+use::assert_cmd::prelude::*;
 use std::process::Command;
-use std::{env, fs};
-
+use std::fs;
 use tempdir::TempDir;
 
-fn cargo_clone_cmd() -> String {
-    let target_dir = env::var("CARGO_TARGET_DIR").unwrap_or_else(|_| "../target".to_string());
-    format!("{target_dir}/debug/cargo-clone")
+fn cargo_clone_cmd() -> Command {
+    Command::cargo_bin("cargo-clone").expect("Unable to get the cargo-clone command.")
 }
 
 #[test]
@@ -15,7 +14,7 @@ fn test_cli() {
 
     assert!(!output_path.exists());
 
-    let status = Command::new(cargo_clone_cmd())
+    let status = cargo_clone_cmd()
         .arg("clone")
         .arg("cargo-clone")
         .arg("--")
@@ -29,13 +28,34 @@ fn test_cli() {
 }
 
 #[test]
+fn test_cli_no_directory() {
+    let temp_dir = TempDir::new("cargo-clone-tests").unwrap();
+    let output_path = temp_dir.path().join("cargo-clone");
+
+    assert!(!output_path.exists());
+
+    //assert!(temp_dir.path().exists());
+    let status = cargo_clone_cmd()
+        .current_dir(temp_dir.path())
+        .arg("clone")
+        .arg("cargo-clone")
+        .status()
+        .unwrap();
+
+    assert!(status.success());
+    assert!(output_path.exists());
+    assert!(output_path.join("Cargo.toml").exists());
+}
+
+
+#[test]
 fn test_custom_index() {
     let temp_dir = TempDir::new("cargo-clone-tests").unwrap();
     let output_path = temp_dir.path().join("cargo-clone");
 
     assert!(!output_path.exists());
 
-    let status = Command::new(cargo_clone_cmd())
+    let status = cargo_clone_cmd()
         .arg("clone")
         .arg("--index")
         .arg("https://github.com/rust-lang/crates.io-index")
@@ -55,7 +75,7 @@ fn test_clone_into_existing() {
     let temp_dir = TempDir::new("cargo-clone-tests").unwrap();
     let output_path = temp_dir.path();
 
-    let status = Command::new(cargo_clone_cmd())
+    let status = cargo_clone_cmd()
         .arg("clone")
         .arg("time")
         .arg("--")
@@ -76,7 +96,7 @@ fn test_with_version() {
 
     assert!(!output_path.exists());
 
-    let status = Command::new(cargo_clone_cmd())
+    let status = cargo_clone_cmd()
         .arg("clone")
         .arg("tokei@6.1.2")
         .arg("--")

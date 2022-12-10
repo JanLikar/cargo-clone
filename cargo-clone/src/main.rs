@@ -153,7 +153,7 @@ pub fn execute(matches: &clap::ArgMatches) -> Result<()> {
     let should_append_crate_dir = {
         let multiple_crates = crates.len() > 1;
         let can_clone_in_dir = directory.map(|d| d.ends_with('/')).unwrap_or(true);
-        multiple_crates && can_clone_in_dir
+        multiple_crates || can_clone_in_dir
     };
 
     if should_append_crate_dir {
