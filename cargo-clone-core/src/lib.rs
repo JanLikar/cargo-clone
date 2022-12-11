@@ -6,9 +6,19 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use std::env;
+//! Fetch the source code of a Rust crate from a registry.
+
+#![warn(missing_docs)]
+
+mod cloner_builder;
+mod source;
+
+pub use cloner_builder::*;
+pub use source::*;
+
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::Path;
+use std::path::PathBuf;
 use std::process::Command;
 
 use anyhow::{bail, Context};
@@ -29,6 +39,7 @@ pub use cargo::{
     util::{CargoResult, Config},
 };
 
+/// Rust crate.
 #[derive(PartialEq, Eq, Debug)]
 pub struct Crate {
     name: String,
@@ -36,65 +47,73 @@ pub struct Crate {
 }
 
 impl Crate {
+    /// Create a new [`Crate`].
+    /// If `version` is not specified, the latest version is chosen.
     pub fn new(name: String, version: Option<String>) -> Crate {
         Crate { name, version }
     }
 }
 
-pub struct CloneOpts<'a> {
-    crates: &'a [Crate],
-    srcid: &'a SourceId,
-    directory: Option<&'a str>,
-    git: bool,
+/// Clones a crate.
+pub struct Cloner {
+    /// Cargo configuration.
+    pub(crate) config: Config,
+    /// Directory where the crates will be cloned.
+    /// Each crate is cloned into a subdirectory of this directory.
+    pub(crate) directory: PathBuf,
+    /// Where the crates will be cloned from.
+    pub(crate) srcid: SourceId,
+    /// If true, use `git` to clone the git repository present in the manifest metadata.
+    pub(crate) use_git: bool,
 }
 
-impl<'a> CloneOpts<'a> {
-    pub fn new(
-        crates: &'a [Crate],
-        srcid: &'a SourceId,
-        directory: Option<&'a str>,
-        git: bool,
-    ) -> CloneOpts<'a> {
-        CloneOpts {
-            crates,
-            srcid,
-            directory,
-            git,
-        }
+impl Cloner {
+    /// Creates a new [`ClonerBuilder`] that:
+    /// - Uses crates.io as source.
+    /// - Clones the crates into the current directory.
+    pub fn builder() -> ClonerBuilder {
+        ClonerBuilder::new()
     }
-}
 
-/// Clone the specified crate from registry or git repository.
-pub fn clone(opts: &CloneOpts, config: &Config) -> CargoResult<()> {
-    let _lock = config.acquire_package_cache_lock()?;
+    /// Clone the specified crate from registry or git repository.
+    /// The crate is cloned in the directory specified by the [`ClonerBuilder`].
+    pub fn clone_in_dir(&self, crate_: &Crate) -> CargoResult<()> {
+        let _lock = self.config.acquire_package_cache_lock()?;
 
-    let multiple_crates = opts.crates.len() > 1;
-    let can_clone_in_dir = opts.directory.map(|d| d.ends_with('/')).unwrap_or(true);
-    let should_append_crate_dir = multiple_crates || can_clone_in_dir;
+        let mut src = get_source(&self.srcid, &self.config)?;
 
-    // If prefix was not supplied, use current dir.
-    let dir_path = opts
-        .directory
-        .map(PathBuf::from)
-        .unwrap_or(env::current_dir()?);
+        self.clone_in(crate_, &self.directory, &mut src)
+    }
 
-    let mut src = get_source(opts.srcid, config)?;
-    src.invalidate_cache();
+    /// Clone the specified crates from registry or git repository.
+    /// Each crate is cloned in a subdirectory named as the crate name.
+    pub fn clone(&self, crates: &[Crate]) -> CargoResult<()> {
+        let _lock = self.config.acquire_package_cache_lock()?;
 
-    for crate_ in opts.crates {
-        let mut dest_path = dir_path.clone();
+        let mut src = get_source(&self.srcid, &self.config)?;
 
-        if should_append_crate_dir {
+        for crate_ in crates {
+            let mut dest_path = self.directory.clone();
+
             dest_path.push(&crate_.name);
+
+            self.clone_in(crate_, &dest_path, &mut src)?;
         }
 
+        Ok(())
+    }
+
+    fn clone_in<'a, T>(&self, crate_: &Crate, dest_path: &Path, src: &mut T) -> CargoResult<()>
+    where
+        T: Source + 'a,
+    {
         if !dest_path.exists() {
-            fs::create_dir_all(&dest_path)?;
+            fs::create_dir_all(dest_path)?;
         }
 
-        config
+        self.config
             .shell()
-            .verbose(|s| s.note(format!("Cloning into {:?}", &dir_path)))?;
+            .verbose(|s| s.note(format!("Cloning into {:?}", &self.directory)))?;
 
         // Cloning into an existing directory is only allowed if the directory is empty.
         let is_empty = dest_path.read_dir()?.next().is_none();
@@ -105,50 +124,44 @@ pub fn clone(opts: &CloneOpts, config: &Config) -> CargoResult<()> {
             );
         }
 
-        clone_single(crate_, &dest_path, opts, config, &mut src)?;
+        self.clone_single(crate_, dest_path, src)
     }
 
-    Ok(())
-}
+    fn clone_single<'a, T>(&self, crate_: &Crate, dest_path: &Path, src: &mut T) -> CargoResult<()>
+    where
+        T: Source + 'a,
+    {
+        let pkg = select_pkg(&self.config, src, &crate_.name, crate_.version.as_deref())?;
 
-pub fn clone_single<'a, T>(
-    crate_: &Crate,
-    dest_path: &Path,
-    opts: &CloneOpts,
-    config: &Config,
-    src: &mut T,
-) -> CargoResult<()>
-where
-    T: Source + 'a,
-{
-    let pkg = select_pkg(config, src, &crate_.name, crate_.version.as_deref())?;
+        if self.use_git {
+            let repo = &pkg.manifest().metadata().repository;
 
-    if opts.git {
-        let repo = &pkg.manifest().metadata().repository;
+            if repo.is_none() {
+                bail!(
+                    "Cannot clone {} from git repo because it is not specified in package's manifest.",
+                    &crate_.name
+                )
+            }
 
-        if repo.is_none() {
-            bail!(
-                "Cannot clone {} from git repo because it is not specified in package's manifest.",
-                &crate_.name
-            )
+            clone_git_repo(repo.as_ref().unwrap(), dest_path)?;
+        } else {
+            clone_directory(pkg.root(), dest_path)?;
         }
 
-        clone_git_repo(repo.as_ref().unwrap(), dest_path)?;
-    } else {
-        clone_directory(pkg.root(), dest_path)?;
+        Ok(())
     }
-
-    Ok(())
 }
 
 fn get_source<'a>(srcid: &SourceId, config: &'a Config) -> CargoResult<Box<dyn Source + 'a>> {
-    let source = if srcid.is_path() {
+    let mut source = if srcid.is_path() {
         let path = srcid.url().to_file_path().expect("path must be valid");
         Box::new(PathSource::new(&path, *srcid, config))
     } else {
         let map = SourceConfigMap::new(config)?;
         map.load(*srcid, &Default::default())?
     };
+
+    source.invalidate_cache();
     Ok(source)
 }
 
@@ -274,6 +287,8 @@ pub fn parse_name_and_version(spec: &str) -> CargoResult<Crate> {
 
 #[cfg(test)]
 mod tests {
+    use std::{env, path::PathBuf};
+
     use super::*;
     use tempdir::TempDir;
 
