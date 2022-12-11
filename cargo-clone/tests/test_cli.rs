@@ -34,7 +34,6 @@ fn test_cli_no_directory() {
 
     assert!(!output_path.exists());
 
-    //assert!(temp_dir.path().exists());
     let status = cargo_clone_cmd()
         .current_dir(temp_dir.path())
         .arg("clone")
