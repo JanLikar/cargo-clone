@@ -59,7 +59,7 @@ impl fmt::Display for Color {
         match self {
             Self::Always => write!(f, "always"),
             Self::Auto => write!(f, "auto"),
-            Self::Never => write!(f, "self"),
+            Self::Never => write!(f, "never"),
         }
     }
 }
