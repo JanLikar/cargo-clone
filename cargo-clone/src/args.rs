@@ -13,7 +13,7 @@ pub enum Command {
 
 #[derive(Debug, Clone, clap::Args)]
 pub struct CloneOpt {
-    /// Coloring: auto, always, never.
+    /// Terminal coloring.
     #[clap(long, value_enum, value_name = "COLORING")]
     pub color: Option<Color>,
     /// Use verbose output.
