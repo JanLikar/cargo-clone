@@ -1,7 +1,7 @@
 [package]
 authors = ["Jan Likar <likar.jan@gmail.com>"]
 name = "cargo-clone-core"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 description = "A library to fetch the source code of a Rust crate"
 documentation = "https://github.com/JanLikar/cargo-clone"

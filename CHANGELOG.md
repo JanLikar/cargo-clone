@@ -1,3 +1,10 @@
+## [1.2.0] - 2023-01-23
+### Changed
+- Update to clap v4 (#63) by @MarcoIeni
+- Improve cargo_clone_core API (#62) by @MarcoIeni
+- Invalidate cache once (#58) @MarcoIeni
+- Update cargo to v0.66 (#55)@MarcoIeni
+
 ## [1.1.0] - 2022-10-08
 ### Added
 - Expose cargo's vendored-openssl feature by @dtolnay in https://github.com/JanLikar/cargo-clone/pull/49
