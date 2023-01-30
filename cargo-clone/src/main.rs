@@ -22,7 +22,8 @@ fn main() {
 
     if let Err(e) = execute(args) {
         let config = cargo_config(args).expect("Unable to get config.");
-        config.shell().error(e).unwrap();
+        let error_msg = format!("{:?}", e);
+        config.shell().error(error_msg).unwrap();
         std::process::exit(101);
     }
 }
