@@ -213,10 +213,10 @@ fn parse_version_req(version: &str) -> CargoResult<String> {
 
     if is_req {
         let vers = VersionReq::parse(version)
-            .with_context(|| format!("Invalid version requirement: `{}`.", version))?;
+            .with_context(|| format!("Invalid version requirement: `{version}`."))?;
         Ok(vers.to_string())
     } else {
-        Ok(format!("={}", version))
+        Ok(format!("={version}"))
     }
 }
 
@@ -274,10 +274,10 @@ pub fn parse_name_and_version(spec: &str) -> CargoResult<Crate> {
     let mut parts = spec.split('@');
     let crate_ = parts
         .next()
-        .context(format!("Crate name missing in `{}`.", spec))?;
+        .context(format!("Crate name missing in `{spec}`."))?;
     let version = parts
         .next()
-        .context(format!("Crate version missing in `{}`.", spec))?;
+        .context(format!("Crate version missing in `{spec}`."))?;
 
     Ok(Crate::new(
         crate_.to_owned(),
