@@ -15,7 +15,7 @@ edition = "2021"
 cargo-clone-core = { path = "../cargo-clone-core", version = "0.1" }
 anyhow.workspace = true
 cargo.workspace = true
-clap = { version = "4.1.6", features = ["derive"] }
+clap = { version = "4.1.8", features = ["derive"] }
 
 [dev-dependencies]
 tempdir.workspace = true
