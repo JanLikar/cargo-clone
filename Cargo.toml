@@ -2,6 +2,6 @@
 members = ["cargo-clone", "cargo-clone-core"]
 
 [workspace.dependencies]
-anyhow = "1.0.69"
+anyhow = "1.0.71"
 cargo = "0.66.0"
 tempdir = "0.3.7"
