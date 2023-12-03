@@ -7,6 +7,7 @@ use clap::{Parser, ValueEnum};
 #[command(bin_name = "cargo")]
 pub enum Command {
     #[command(name = "clone")]
+    #[command(arg_required_else_help = true)]
     #[command(about, author, version)]
     Clone(CloneOpt),
 }
