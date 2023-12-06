@@ -13,7 +13,7 @@ repository = "https://github.com/JanLikar/cargo-clone"
 [dependencies]
 anyhow.workspace = true
 cargo.workspace = true
-semver = "1.0.17"
+semver = "1.0.20"
 walkdir = "2.3.3"
 url = "2.4.0"
 
