@@ -24,10 +24,10 @@ use std::process::Command;
 use anyhow::{bail, Context};
 
 use cargo::core::dependency::Dependency;
-use cargo::core::source::Source;
 use cargo::core::Package;
-use cargo::core::QueryKind;
 use cargo::sources::{PathSource, SourceConfigMap};
+use cargo::sources::source::QueryKind;
+use cargo::sources::source::Source;
 
 use semver::VersionReq;
 
