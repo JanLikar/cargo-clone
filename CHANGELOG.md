@@ -1,3 +1,10 @@
+## [1.2.1] - 2023-12-13
+### Changed
+  - fix: log full error (#68) by @MarcoIeni
+  - Show cli usage when no arguments are provided. (#93) by @RyanAvella
+  - Update Cargo and other dependencies due to security concerns
+  - Use matching versions for cargo-clone and cargo-clone-core
+
 ## [1.2.0] - 2023-01-23
 ### Changed
 - Update to clap v4 (#63) by @MarcoIeni
