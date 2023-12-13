@@ -25,9 +25,9 @@ use anyhow::{bail, Context};
 
 use cargo::core::dependency::Dependency;
 use cargo::core::Package;
-use cargo::sources::{PathSource, SourceConfigMap};
 use cargo::sources::source::QueryKind;
 use cargo::sources::source::Source;
+use cargo::sources::{PathSource, SourceConfigMap};
 
 use semver::VersionReq;
 
