@@ -53,7 +53,7 @@ If multiple packages are downloaded at the same time or if the directory contain
 the packages will be downloaded into subdirectories of the path provided.
 
     cargo clone cargo-clone -- pkgs/  # Creates pkgs/cargo-clone/
-    cargo clone cargo serde -- pkgs2/  # Creates pkgs/cargo and pkgs/serde
+    cargo clone cargo serde -- pkgs2/  # Creates pkgs2/cargo and pkgs2/serde
 
 
 ## Contributing
