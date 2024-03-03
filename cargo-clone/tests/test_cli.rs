@@ -1,7 +1,7 @@
 use ::assert_cmd::prelude::*;
 use std::fs;
 use std::process::Command;
-use tempdir::TempDir;
+use tempfile::tempdir;
 
 fn cargo_clone_cmd() -> Command {
     Command::cargo_bin("cargo-clone").expect("Unable to get the cargo-clone command.")
@@ -9,7 +9,7 @@ fn cargo_clone_cmd() -> Command {
 
 #[test]
 fn test_cli() {
-    let temp_dir = TempDir::new("cargo-clone-tests").unwrap();
+    let temp_dir = tempdir().unwrap();
     let output_path = temp_dir.path().join("cargo-clone");
 
     assert!(!output_path.exists());
@@ -29,7 +29,7 @@ fn test_cli() {
 
 #[test]
 fn test_cli_no_directory() {
-    let temp_dir = TempDir::new("cargo-clone-tests").unwrap();
+    let temp_dir = tempdir().unwrap();
     let output_path = temp_dir.path().join("cargo-clone");
 
     assert!(!output_path.exists());
@@ -48,7 +48,7 @@ fn test_cli_no_directory() {
 
 #[test]
 fn test_custom_index() {
-    let temp_dir = TempDir::new("cargo-clone-tests").unwrap();
+    let temp_dir = tempdir().unwrap();
     let output_path = temp_dir.path().join("cargo-clone");
 
     assert!(!output_path.exists());
@@ -70,7 +70,7 @@ fn test_custom_index() {
 
 #[test]
 fn test_clone_into_existing() {
-    let temp_dir = TempDir::new("cargo-clone-tests").unwrap();
+    let temp_dir = tempdir().unwrap();
     let output_path = temp_dir.path();
 
     let status = cargo_clone_cmd()
@@ -89,7 +89,7 @@ fn test_clone_into_existing() {
 #[test]
 
 fn test_with_version() {
-    let temp_dir = TempDir::new("cargo-clone-tests").unwrap();
+    let temp_dir = tempdir().unwrap();
     let output_path = temp_dir.path().join("cargo-clone");
 
     assert!(!output_path.exists());
