@@ -290,7 +290,7 @@ mod tests {
     use std::{env, path::PathBuf};
 
     use super::*;
-    use tempdir::TempDir;
+    use tempfile::tempdir;
 
     #[test]
     fn test_parse_version_req() {
@@ -311,7 +311,7 @@ mod tests {
     fn test_clone_directory() {
         let manifest_dir = env::var("CARGO_MANIFEST_DIR").unwrap();
         let from = PathBuf::from(manifest_dir).join("tests/data");
-        let to = TempDir::new("cargo-clone-tests").unwrap();
+        let to = tempdir().unwrap();
         let to_path = to.path();
 
         clone_directory(&from, to_path).unwrap();
@@ -322,7 +322,7 @@ mod tests {
 
     #[test]
     fn test_clone_repo() {
-        let to = TempDir::new("cargo-clone-tests").unwrap();
+        let to = tempdir().unwrap();
         let to_path = to.path();
 
         clone_git_repo("https://github.com/janlikar/cargo-clone", to_path).unwrap();

@@ -1,9 +1,9 @@
 use cargo_clone_core::ClonerBuilder;
-use tempdir::TempDir;
+use tempfile::tempdir;
 
 #[test]
 fn test_from_registry_in_dir() {
-    let temp_dir = TempDir::new("cargo-clone-tests").unwrap();
+    let temp_dir = tempdir().unwrap();
     let output_path = temp_dir.path().join("cargo-clone");
 
     assert!(!output_path.exists());
@@ -25,7 +25,7 @@ fn test_from_registry_in_dir() {
 
 #[test]
 fn test_from_registry() {
-    let temp_dir = TempDir::new("cargo-clone-tests").unwrap();
+    let temp_dir = tempdir().unwrap();
     let output_path = temp_dir.path().join("cargo-clone");
 
     assert!(!output_path.exists());
@@ -48,7 +48,7 @@ fn test_from_registry() {
 #[test]
 fn test_dir_path() {
     // Test cargo clone CRATE DIR/ dumps into DIR/CRATE.
-    let temp_dir = TempDir::new("cargo-clone-tests").unwrap();
+    let temp_dir = tempdir().unwrap();
     let output_path = temp_dir.path().join("foo");
 
     assert!(!output_path.exists());
@@ -72,7 +72,7 @@ fn test_dir_path() {
 
 #[test]
 fn test_multi_crates() {
-    let temp_dir = TempDir::new("cargo-clone-tests").unwrap();
+    let temp_dir = tempdir().unwrap();
     let output_path = temp_dir.path().join("Test");
 
     assert!(!output_path.exists());
