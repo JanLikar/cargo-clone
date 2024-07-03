@@ -15,7 +15,7 @@ anyhow.workspace = true
 cargo.workspace = true
 semver = "1.0.22"
 walkdir = "2.5.0"
-url = "2.5.0"
+url = "2.5.2"
 
 [dev-dependencies]
 tempfile.workspace = true
