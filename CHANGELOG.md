@@ -1,4 +1,4 @@
-## [1.2.2] - 2024-08-24
+## [1.2.3] - 2024-08-24
 ### Changed
   - Update dependencies
   - Specify workspace resolver to clear warnings (#133) by @eopb
