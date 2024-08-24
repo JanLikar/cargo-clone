@@ -1,5 +1,5 @@
 [package]
-authors = ["Jan Likar <likar.jan@gmail.com>"]
+authors = ["Jan Likar <jan.likar@protonmail.com>"]
 description = "A cargo subcommand to fetch the source code of a Rust crate"
 documentation = "https://github.com/JanLikar/cargo-clone"
 homepage = "https://github.com/JanLikar/cargo-clone"
@@ -8,7 +8,7 @@ license = "Apache-2.0/MIT"
 name = "cargo-clone"
 readme = "../README.md"
 repository = "https://github.com/JanLikar/cargo-clone"
-version = "1.2.1"
+version = "1.2.2"
 edition = "2021"
 
 [dependencies]

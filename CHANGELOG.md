@@ -1,3 +1,9 @@
+## [1.2.2] - 2024-08-24
+### Changed
+  - Update dependencies
+  - Specify workspace resolver to clear warnings (#133) by @eopb
+  - Update time to fix build failures on rust 1.80.0 (#134) by @eopb
+
 ## [1.2.1] - 2023-12-13
 ### Changed
   - fix: log full error (#68) by @MarcoIeni
