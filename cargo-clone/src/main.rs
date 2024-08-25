@@ -10,8 +10,7 @@ mod args;
 
 use anyhow::Context;
 use args::{CloneOpt, Command};
-use cargo::util::Config;
-
+use cargo::util::context::GlobalContext;
 use cargo_clone_core::{ClonerBuilder, ClonerSource};
 use clap::Parser;
 
@@ -21,19 +20,19 @@ fn main() {
     let Command::Clone(ref args) = Command::parse();
 
     if let Err(e) = execute(args) {
-        let config = cargo_config(args).expect("Unable to get config.");
+        let config = cargo_context(args).expect("Unable to get Cargo context.");
         let error_msg = format!("{:?}", e);
         config.shell().error(error_msg).unwrap();
         std::process::exit(101);
     }
 }
 
-fn cargo_config(matches: &CloneOpt) -> Result<Config> {
+fn cargo_context(matches: &CloneOpt) -> Result<GlobalContext> {
     let verbose = u32::from(matches.verbose);
 
-    let mut config = Config::default().expect("Unable to get config.");
+    let mut context = GlobalContext::default()?;
     let color = matches.color.map(|c| c.to_string());
-    config.configure(
+    context.configure(
         verbose,
         matches.quiet,
         color.as_deref(),
@@ -44,7 +43,7 @@ fn cargo_config(matches: &CloneOpt) -> Result<Config> {
         &[],
         &[],
     )?;
-    Ok(config)
+    Ok(context)
 }
 
 fn source(opts: &CloneOpt) -> Result<ClonerSource> {
@@ -70,8 +69,8 @@ pub fn execute(opts: &CloneOpt) -> Result<()> {
         .map(cargo_clone_core::parse_name_and_version)
         .collect::<Result<Vec<cargo_clone_core::Crate>>>()?;
 
-    let config = cargo_config(opts)?;
-    let mut cloner_builder = ClonerBuilder::new().with_source(source).with_config(config);
+    let context = cargo_context(opts)?;
+    let mut cloner_builder = ClonerBuilder::new().with_source(source).with_context(context);
     let directory = opts.directory.as_deref();
     if let Some(directory) = directory {
         cloner_builder = cloner_builder.with_directory(directory);

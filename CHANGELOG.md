@@ -1,3 +1,8 @@
+## [1.2.4] - Unreleased
+### Changed
+  - Update dependencies
+  - Update Cargo to 0.81.0 (cargo-clone-core breaking change)
+
 ## [1.2.3] - 2024-08-24
 ### Changed
   - Update dependencies

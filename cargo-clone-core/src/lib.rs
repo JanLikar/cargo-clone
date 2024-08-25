@@ -28,7 +28,9 @@ use cargo::core::Package;
 use cargo::sources::source::QueryKind;
 use cargo::sources::source::Source;
 use cargo::sources::{PathSource, SourceConfigMap};
-
+use cargo::sources::registry::IndexSummary;
+use cargo::util::cache_lock::CacheLockMode;
+use cargo::util::context::GlobalContext;
 use semver::VersionReq;
 
 use walkdir::WalkDir;
@@ -36,7 +38,7 @@ use walkdir::WalkDir;
 // Re-export cargo types.
 pub use cargo::{
     core::SourceId,
-    util::{CargoResult, Config},
+    util::CargoResult,
 };
 
 /// Rust crate.
@@ -56,8 +58,8 @@ impl Crate {
 
 /// Clones a crate.
 pub struct Cloner {
-    /// Cargo configuration.
-    pub(crate) config: Config,
+    /// Cargo context.
+    pub(crate) context: GlobalContext,
     /// Directory where the crates will be cloned.
     /// Each crate is cloned into a subdirectory of this directory.
     pub(crate) directory: PathBuf,
@@ -78,9 +80,9 @@ impl Cloner {
     /// Clone the specified crate from registry or git repository.
     /// The crate is cloned in the directory specified by the [`ClonerBuilder`].
     pub fn clone_in_dir(&self, crate_: &Crate) -> CargoResult<()> {
-        let _lock = self.config.acquire_package_cache_lock()?;
+        let _lock = self.context.acquire_package_cache_lock(CacheLockMode::DownloadExclusive)?;
 
-        let mut src = get_source(&self.srcid, &self.config)?;
+        let mut src = get_source(&self.srcid, &self.context)?;
 
         self.clone_in(crate_, &self.directory, &mut src)
     }
@@ -88,9 +90,9 @@ impl Cloner {
     /// Clone the specified crates from registry or git repository.
     /// Each crate is cloned in a subdirectory named as the crate name.
     pub fn clone(&self, crates: &[Crate]) -> CargoResult<()> {
-        let _lock = self.config.acquire_package_cache_lock()?;
+        let _lock = self.context.acquire_package_cache_lock(CacheLockMode::DownloadExclusive)?;
 
-        let mut src = get_source(&self.srcid, &self.config)?;
+        let mut src = get_source(&self.srcid, &self.context)?;
 
         for crate_ in crates {
             let mut dest_path = self.directory.clone();
@@ -111,7 +113,7 @@ impl Cloner {
             fs::create_dir_all(dest_path)?;
         }
 
-        self.config
+        self.context
             .shell()
             .verbose(|s| s.note(format!("Cloning into {:?}", &self.directory)))?;
 
@@ -131,7 +133,7 @@ impl Cloner {
     where
         T: Source + 'a,
     {
-        let pkg = select_pkg(&self.config, src, &crate_.name, crate_.version.as_deref())?;
+        let pkg = select_pkg(&self.context, src, &crate_.name, crate_.version.as_deref())?;
 
         if self.use_git {
             let repo = &pkg.manifest().metadata().repository;
@@ -152,12 +154,12 @@ impl Cloner {
     }
 }
 
-fn get_source<'a>(srcid: &SourceId, config: &'a Config) -> CargoResult<Box<dyn Source + 'a>> {
+fn get_source<'a>(srcid: &SourceId, context: &'a GlobalContext) -> CargoResult<Box<dyn Source + 'a>> {
     let mut source = if srcid.is_path() {
         let path = srcid.url().to_file_path().expect("path must be valid");
-        Box::new(PathSource::new(&path, *srcid, config))
+        Box::new(PathSource::new(&path, *srcid, context))
     } else {
-        let map = SourceConfigMap::new(config)?;
+        let map = SourceConfigMap::new(context)?;
         map.load(*srcid, &Default::default())?
     };
 
@@ -166,7 +168,7 @@ fn get_source<'a>(srcid: &SourceId, config: &'a Config) -> CargoResult<Box<dyn S
 }
 
 fn select_pkg<'a, T>(
-    config: &Config,
+    context: &GlobalContext,
     src: &mut T,
     name: &str,
     vers: Option<&str>,
@@ -186,14 +188,16 @@ where
         }
     }
 
-    let latest = summaries.iter().max_by_key(|s| s.version());
+    let latest = summaries.iter()
+        .filter_map(|idxs| match idxs { IndexSummary::Candidate(s) => Some(s), _ => None})
+        .max_by_key(|s| s.version());
 
     match latest {
         Some(l) => {
-            config
+            context
                 .shell()
                 .note(format!("Downloading {} {}", name, l.version()))?;
-            let pkg = Box::new(src).download_now(l.package_id(), config)?;
+            let pkg = Box::new(src).download_now(l.package_id(), context)?;
             Ok(pkg)
         }
         None => bail!("Package `{}@{}` not found", name, vers.unwrap_or("*.*.*")),

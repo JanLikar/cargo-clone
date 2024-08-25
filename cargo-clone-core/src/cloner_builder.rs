@@ -9,14 +9,15 @@
 use std::{env, path::PathBuf};
 
 use anyhow::Context;
-use cargo::{CargoResult, Config};
+use cargo::CargoResult;
+use cargo::util::context::GlobalContext;
 
 use crate::{Cloner, ClonerSource};
 
 /// Builder for [`Cloner`].
 #[derive(Debug, Default)]
 pub struct ClonerBuilder {
-    config: Option<Config>,
+    context: Option<GlobalContext>,
     directory: Option<PathBuf>,
     source: ClonerSource,
     use_git: bool,
@@ -31,9 +32,9 @@ impl ClonerBuilder {
     }
 
     /// Use the specified cargo configuration, instead of the default one.
-    pub fn with_config(self, config: Config) -> Self {
+    pub fn with_context(self, context: GlobalContext) -> Self {
         Self {
-            config: Some(config),
+            context: Some(context),
             ..self
         }
     }
@@ -58,9 +59,9 @@ impl ClonerBuilder {
 
     /// Build the [`Cloner`].
     pub fn build(self) -> CargoResult<Cloner> {
-        let config = match self.config {
-            Some(config) => config,
-            None => Config::default().context("Unable to get cargo config.")?,
+        let context = match self.context {
+            Some(context) => context,
+            None => GlobalContext::default().context("Unable to get cargo context.")?,
         };
 
         let directory = match self.directory {
@@ -71,11 +72,11 @@ impl ClonerBuilder {
         let srcid = self
             .source
             .cargo_source
-            .to_source_id(&config)
+            .to_source_id(&context)
             .context("can't determine the source id")?;
 
         Ok(Cloner {
-            config,
+            context,
             directory,
             srcid,
             use_git: self.use_git,
