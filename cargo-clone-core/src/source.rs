@@ -6,8 +6,8 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use cargo::{core::SourceId, util::IntoUrl, CargoResult};
 use cargo::util::GlobalContext;
+use cargo::{core::SourceId, util::IntoUrl, CargoResult};
 use url::Url;
 
 /// Where to clone the crate from.

@@ -70,7 +70,9 @@ pub fn execute(opts: &CloneOpt) -> Result<()> {
         .collect::<Result<Vec<cargo_clone_core::Crate>>>()?;
 
     let context = cargo_context(opts)?;
-    let mut cloner_builder = ClonerBuilder::new().with_source(source).with_context(context);
+    let mut cloner_builder = ClonerBuilder::new()
+        .with_source(source)
+        .with_context(context);
     let directory = opts.directory.as_deref();
     if let Some(directory) = directory {
         cloner_builder = cloner_builder.with_directory(directory);

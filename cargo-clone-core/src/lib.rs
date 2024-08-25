@@ -25,10 +25,10 @@ use anyhow::{bail, Context};
 
 use cargo::core::dependency::Dependency;
 use cargo::core::Package;
+use cargo::sources::registry::IndexSummary;
 use cargo::sources::source::QueryKind;
 use cargo::sources::source::Source;
 use cargo::sources::{PathSource, SourceConfigMap};
-use cargo::sources::registry::IndexSummary;
 use cargo::util::cache_lock::CacheLockMode;
 use cargo::util::context::GlobalContext;
 use semver::VersionReq;
@@ -36,10 +36,7 @@ use semver::VersionReq;
 use walkdir::WalkDir;
 
 // Re-export cargo types.
-pub use cargo::{
-    core::SourceId,
-    util::CargoResult,
-};
+pub use cargo::{core::SourceId, util::CargoResult};
 
 /// Rust crate.
 #[derive(PartialEq, Eq, Debug)]
@@ -80,7 +77,9 @@ impl Cloner {
     /// Clone the specified crate from registry or git repository.
     /// The crate is cloned in the directory specified by the [`ClonerBuilder`].
     pub fn clone_in_dir(&self, crate_: &Crate) -> CargoResult<()> {
-        let _lock = self.context.acquire_package_cache_lock(CacheLockMode::DownloadExclusive)?;
+        let _lock = self
+            .context
+            .acquire_package_cache_lock(CacheLockMode::DownloadExclusive)?;
 
         let mut src = get_source(&self.srcid, &self.context)?;
 
@@ -90,7 +89,9 @@ impl Cloner {
     /// Clone the specified crates from registry or git repository.
     /// Each crate is cloned in a subdirectory named as the crate name.
     pub fn clone(&self, crates: &[Crate]) -> CargoResult<()> {
-        let _lock = self.context.acquire_package_cache_lock(CacheLockMode::DownloadExclusive)?;
+        let _lock = self
+            .context
+            .acquire_package_cache_lock(CacheLockMode::DownloadExclusive)?;
 
         let mut src = get_source(&self.srcid, &self.context)?;
 
@@ -154,7 +155,10 @@ impl Cloner {
     }
 }
 
-fn get_source<'a>(srcid: &SourceId, context: &'a GlobalContext) -> CargoResult<Box<dyn Source + 'a>> {
+fn get_source<'a>(
+    srcid: &SourceId,
+    context: &'a GlobalContext,
+) -> CargoResult<Box<dyn Source + 'a>> {
     let mut source = if srcid.is_path() {
         let path = srcid.url().to_file_path().expect("path must be valid");
         Box::new(PathSource::new(&path, *srcid, context))
@@ -188,8 +192,12 @@ where
         }
     }
 
-    let latest = summaries.iter()
-        .filter_map(|idxs| match idxs { IndexSummary::Candidate(s) => Some(s), _ => None})
+    let latest = summaries
+        .iter()
+        .filter_map(|idxs| match idxs {
+            IndexSummary::Candidate(s) => Some(s),
+            _ => None,
+        })
         .max_by_key(|s| s.version());
 
     match latest {
