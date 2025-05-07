@@ -3,6 +3,6 @@ members = ["cargo-clone", "cargo-clone-core"]
 resolver = "2"
 
 [workspace.dependencies]
-anyhow = "1.0.97"
+anyhow = "1.0.98"
 cargo = "0.85"
 tempfile = "3.19.1"
