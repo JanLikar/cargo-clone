@@ -2,7 +2,7 @@
 authors = ["Jan Likar <jan.likar@protonmail.com>"]
 name = "cargo-clone-core"
 version = "0.2.3"
-edition = "2021"
+edition = "2024"
 description = "A library to fetch the source code of a Rust crate"
 documentation = "https://github.com/JanLikar/cargo-clone"
 homepage = "https://github.com/JanLikar/cargo-clone"

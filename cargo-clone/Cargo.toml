@@ -9,7 +9,7 @@ name = "cargo-clone"
 readme = "../README.md"
 repository = "https://github.com/JanLikar/cargo-clone"
 version = "1.2.3"
-edition = "2021"
+edition = "2024"
 
 [dependencies]
 cargo-clone-core = { path = "../cargo-clone-core", version = "0.2" }
