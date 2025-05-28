@@ -21,10 +21,10 @@ use std::path::Path;
 use std::path::PathBuf;
 use std::process::Command;
 
-use anyhow::{bail, Context};
+use anyhow::{Context, bail};
 
-use cargo::core::dependency::Dependency;
 use cargo::core::Package;
+use cargo::core::dependency::Dependency;
 use cargo::sources::registry::IndexSummary;
 use cargo::sources::source::QueryKind;
 use cargo::sources::source::Source;

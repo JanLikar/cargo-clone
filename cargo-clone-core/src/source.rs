@@ -7,7 +7,7 @@
 // except according to those terms.
 
 use cargo::util::GlobalContext;
-use cargo::{core::SourceId, util::IntoUrl, CargoResult};
+use cargo::{CargoResult, core::SourceId, util::IntoUrl};
 use url::Url;
 
 /// Where to clone the crate from.

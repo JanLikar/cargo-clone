@@ -9,8 +9,8 @@
 use std::{env, path::PathBuf};
 
 use anyhow::Context;
-use cargo::util::context::GlobalContext;
 use cargo::CargoResult;
+use cargo::util::context::GlobalContext;
 
 use crate::{Cloner, ClonerSource};
 
