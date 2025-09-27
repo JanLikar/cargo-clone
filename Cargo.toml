@@ -5,4 +5,4 @@ resolver = "2"
 [workspace.dependencies]
 anyhow = "1.0.100"
 cargo = "0.88"
-tempfile = "3.21.0"
+tempfile = "3.23.0"
