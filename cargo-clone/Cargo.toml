@@ -19,7 +19,7 @@ clap = { version = "4.5.53", features = ["derive"] }
 
 [dev-dependencies]
 tempfile.workspace = true
-assert_cmd = "2.0"
+assert_cmd = "2.1"
 
 [features]
 vendored-openssl = ["cargo/vendored-openssl"]
