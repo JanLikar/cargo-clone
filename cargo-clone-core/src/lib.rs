@@ -116,7 +116,7 @@ impl Cloner {
 
         self.context
             .shell()
-            .verbose(|s| s.note(format!("Cloning into {:?}", &self.directory)))?;
+            .verbose(|s| s.note(format!("Cloning into {:?}", self.directory)))?;
 
         // Cloning into an existing directory is only allowed if the directory is empty.
         let is_empty = dest_path.read_dir()?.next().is_none();
@@ -142,7 +142,7 @@ impl Cloner {
             if repo.is_none() {
                 bail!(
                     "Cannot clone {} from git repo because it is not specified in package's manifest.",
-                    &crate_.name
+                    crate_.name
                 )
             }
 
